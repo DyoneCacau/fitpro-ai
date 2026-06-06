@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Flame, Clock, Dumbbell, Layers, ChevronRight, Zap, TrendingUp, Calendar } from "lucide-react";
+import { Flame, Clock, Dumbbell, Layers, ChevronRight, Zap, TrendingUp, Calendar, LogOut } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { AuthGate } from "@/components/AuthGate";
+import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 import { todayWorkout, weekSchedule, stats } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/")({
@@ -14,7 +17,18 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
+  return (
+    <AuthGate>
+      <HomeInner />
+    </AuthGate>
+  );
+}
+
+function HomeInner() {
+  const { user, role } = useAuth();
   const totalSets = todayWorkout.exercises.reduce((a, e) => a + e.sets.length, 0);
+  const name = (user?.user_metadata?.full_name as string) ?? user?.email ?? "Atleta";
+  const initials = name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 
   return (
     <AppShell>
@@ -23,12 +37,21 @@ function Home() {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Quarta · 06 Jun
+              Quarta · 06 Jun {role && <span className="ml-2 rounded-full bg-primary/15 text-primary px-2 py-0.5 normal-case tracking-normal">{role}</span>}
             </p>
-            <h1 className="mt-1 text-2xl font-bold text-foreground">Olá, Dyone 👋</h1>
+            <h1 className="mt-1 text-2xl font-bold text-foreground">Olá, {name.split(" ")[0]} 👋</h1>
           </div>
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-primary text-primary-foreground font-bold shadow-glow">
-            DY
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => supabase.auth.signOut()}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              aria-label="Sair"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-primary text-primary-foreground font-bold shadow-glow">
+              {initials}
+            </div>
           </div>
         </div>
 
