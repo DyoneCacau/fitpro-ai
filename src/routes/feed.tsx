@@ -172,8 +172,8 @@ function PostCard({
     }
   };
 
-  const name = post.author?.full_name ?? "Aluno";
-  const initials = name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+  const name = post.authorName ?? "Aluno";
+  const initials = name.split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();
   const when = new Date(post.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
 
   return (
