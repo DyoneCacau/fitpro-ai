@@ -224,10 +224,17 @@ function Comments({ postId, currentUserId }: { postId: string; currentUserId: st
     queryFn: async () => {
       const { data } = await supabase
         .from("post_comments")
-        .select("*, profile:profiles!post_comments_user_id_fkey(full_name)")
+        .select("*")
         .eq("post_id", postId)
         .order("created_at");
-      return data ?? [];
+      const rows = data ?? [];
+      const ids = Array.from(new Set(rows.map((r) => r.user_id)));
+      const nameMap = new Map<string, string | null>();
+      if (ids.length) {
+        const { data: profs } = await supabase.from("profiles").select("id, full_name").in("id", ids);
+        (profs ?? []).forEach((p) => nameMap.set(p.id, p.full_name));
+      }
+      return rows.map((r) => ({ ...r, authorName: nameMap.get(r.user_id) ?? "Usuário" }));
     },
   });
 
@@ -246,7 +253,7 @@ function Comments({ postId, currentUserId }: { postId: string; currentUserId: st
     <div className="border-t border-border bg-background/30 p-3 space-y-2">
       {comments.map((c) => (
         <div key={c.id} className="text-xs">
-          <span className="font-bold">{(c as { profile?: { full_name?: string } }).profile?.full_name ?? "Usuário"}: </span>
+          <span className="font-bold">{c.authorName}: </span>
           <span className="text-muted-foreground">{c.text}</span>
         </div>
       ))}
