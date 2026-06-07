@@ -26,7 +26,7 @@ interface Post {
   photo_url: string | null;
   kind: string;
   created_at: string;
-  author?: { full_name: string | null; avatar_url: string | null };
+  authorName?: string | null;
   post_likes?: { user_id: string }[];
   post_comments?: { id: string }[];
 }
