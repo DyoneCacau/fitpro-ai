@@ -59,12 +59,22 @@ function Feed() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("posts")
-        .select("*, author:profiles!posts_author_id_fkey(full_name, avatar_url), post_likes(user_id), post_comments(id)")
+        .select("*, post_likes(user_id), post_comments(id)")
         .eq("personal_id", scopePersonalId!)
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
-      return (data ?? []) as Post[];
+      const rows = (data ?? []) as unknown as Post[];
+      const ids = Array.from(new Set(rows.map((r) => r.author_id)));
+      if (ids.length) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", ids);
+        const map = new Map((profs ?? []).map((p) => [p.id, p.full_name]));
+        rows.forEach((r) => { r.authorName = map.get(r.author_id) ?? null; });
+      }
+      return rows;
     },
   });
 
