@@ -1,13 +1,13 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, Dumbbell, TrendingUp, MessageCircle, User } from "lucide-react";
+import { Home, Dumbbell, Apple, Users, User } from "lucide-react";
 
 const items = [
   { to: "/", label: "Início", icon: Home },
   { to: "/treinos", label: "Treinos", icon: Dumbbell },
-  { to: "/progresso", label: "Progresso", icon: TrendingUp },
-  { to: "/chat", label: "Chat", icon: MessageCircle },
+  { to: "/dieta", label: "Dieta", icon: Apple },
+  { to: "/feed", label: "Feed", icon: Users },
   { to: "/perfil", label: "Perfil", icon: User },
-];
+] as const;
 
 export function BottomNav() {
   const loc = useLocation();
@@ -15,7 +15,7 @@ export function BottomNav() {
     <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-border bg-card/95 backdrop-blur-lg pb-[env(safe-area-inset-bottom)]">
       <div className="mx-auto flex max-w-md items-center justify-around px-2 py-2">
         {items.map((it) => {
-          const active = loc.pathname === it.to;
+          const active = loc.pathname === it.to || (it.to !== "/" && loc.pathname.startsWith(it.to));
           const Icon = it.icon;
           return (
             <Link
