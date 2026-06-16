@@ -18,8 +18,11 @@ import { Route as FeedRouteImport } from './routes/feed'
 import { Route as DietaRouteImport } from './routes/dieta'
 import { Route as AvaliacoesRouteImport } from './routes/avaliacoes'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AlunosRouteImport } from './routes/alunos'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TreinoIdRouteImport } from './routes/treino.$id'
+import { Route as ConviteTokenRouteImport } from './routes/convite.$token'
+import { Route as AlunosAlunoIdRouteImport } from './routes/alunos.$alunoId'
 
 const TreinosRoute = TreinosRouteImport.update({
   id: '/treinos',
@@ -66,6 +69,11 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AlunosRoute = AlunosRouteImport.update({
+  id: '/alunos',
+  path: '/alunos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -76,9 +84,20 @@ const TreinoIdRoute = TreinoIdRouteImport.update({
   path: '/treino/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConviteTokenRoute = ConviteTokenRouteImport.update({
+  id: '/convite/$token',
+  path: '/convite/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AlunosAlunoIdRoute = AlunosAlunoIdRouteImport.update({
+  id: '/$alunoId',
+  path: '/$alunoId',
+  getParentRoute: () => AlunosRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/alunos': typeof AlunosRouteWithChildren
   '/auth': typeof AuthRoute
   '/avaliacoes': typeof AvaliacoesRoute
   '/dieta': typeof DietaRoute
@@ -88,10 +107,13 @@ export interface FileRoutesByFullPath {
   '/perfil': typeof PerfilRoute
   '/reset-password': typeof ResetPasswordRoute
   '/treinos': typeof TreinosRoute
+  '/alunos/$alunoId': typeof AlunosAlunoIdRoute
+  '/convite/$token': typeof ConviteTokenRoute
   '/treino/$id': typeof TreinoIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/alunos': typeof AlunosRouteWithChildren
   '/auth': typeof AuthRoute
   '/avaliacoes': typeof AvaliacoesRoute
   '/dieta': typeof DietaRoute
@@ -101,11 +123,14 @@ export interface FileRoutesByTo {
   '/perfil': typeof PerfilRoute
   '/reset-password': typeof ResetPasswordRoute
   '/treinos': typeof TreinosRoute
+  '/alunos/$alunoId': typeof AlunosAlunoIdRoute
+  '/convite/$token': typeof ConviteTokenRoute
   '/treino/$id': typeof TreinoIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/alunos': typeof AlunosRouteWithChildren
   '/auth': typeof AuthRoute
   '/avaliacoes': typeof AvaliacoesRoute
   '/dieta': typeof DietaRoute
@@ -115,12 +140,15 @@ export interface FileRoutesById {
   '/perfil': typeof PerfilRoute
   '/reset-password': typeof ResetPasswordRoute
   '/treinos': typeof TreinosRoute
+  '/alunos/$alunoId': typeof AlunosAlunoIdRoute
+  '/convite/$token': typeof ConviteTokenRoute
   '/treino/$id': typeof TreinoIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/alunos'
     | '/auth'
     | '/avaliacoes'
     | '/dieta'
@@ -130,10 +158,13 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/reset-password'
     | '/treinos'
+    | '/alunos/$alunoId'
+    | '/convite/$token'
     | '/treino/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/alunos'
     | '/auth'
     | '/avaliacoes'
     | '/dieta'
@@ -143,10 +174,13 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/reset-password'
     | '/treinos'
+    | '/alunos/$alunoId'
+    | '/convite/$token'
     | '/treino/$id'
   id:
     | '__root__'
     | '/'
+    | '/alunos'
     | '/auth'
     | '/avaliacoes'
     | '/dieta'
@@ -156,11 +190,14 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/reset-password'
     | '/treinos'
+    | '/alunos/$alunoId'
+    | '/convite/$token'
     | '/treino/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AlunosRoute: typeof AlunosRouteWithChildren
   AuthRoute: typeof AuthRoute
   AvaliacoesRoute: typeof AvaliacoesRoute
   DietaRoute: typeof DietaRoute
@@ -170,6 +207,7 @@ export interface RootRouteChildren {
   PerfilRoute: typeof PerfilRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TreinosRoute: typeof TreinosRoute
+  ConviteTokenRoute: typeof ConviteTokenRoute
   TreinoIdRoute: typeof TreinoIdRoute
 }
 
@@ -238,6 +276,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/alunos': {
+      id: '/alunos'
+      path: '/alunos'
+      fullPath: '/alunos'
+      preLoaderRoute: typeof AlunosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -252,11 +297,37 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TreinoIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/convite/$token': {
+      id: '/convite/$token'
+      path: '/convite/$token'
+      fullPath: '/convite/$token'
+      preLoaderRoute: typeof ConviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/alunos/$alunoId': {
+      id: '/alunos/$alunoId'
+      path: '/$alunoId'
+      fullPath: '/alunos/$alunoId'
+      preLoaderRoute: typeof AlunosAlunoIdRouteImport
+      parentRoute: typeof AlunosRoute
+    }
   }
 }
 
+interface AlunosRouteChildren {
+  AlunosAlunoIdRoute: typeof AlunosAlunoIdRoute
+}
+
+const AlunosRouteChildren: AlunosRouteChildren = {
+  AlunosAlunoIdRoute: AlunosAlunoIdRoute,
+}
+
+const AlunosRouteWithChildren =
+  AlunosRoute._addFileChildren(AlunosRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AlunosRoute: AlunosRouteWithChildren,
   AuthRoute: AuthRoute,
   AvaliacoesRoute: AvaliacoesRoute,
   DietaRoute: DietaRoute,
@@ -266,8 +337,19 @@ const rootRouteChildren: RootRouteChildren = {
   PerfilRoute: PerfilRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TreinosRoute: TreinosRoute,
+  ConviteTokenRoute: ConviteTokenRoute,
   TreinoIdRoute: TreinoIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

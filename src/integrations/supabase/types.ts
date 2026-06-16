@@ -188,6 +188,7 @@ export type Database = {
           created_at: string
           exercise_id: string
           id: string
+          note: string | null
           position: number
           set_type: Database["public"]["Enums"]["set_type"]
           target_load: number | null
@@ -197,6 +198,7 @@ export type Database = {
           created_at?: string
           exercise_id: string
           id?: string
+          note?: string | null
           position?: number
           set_type?: Database["public"]["Enums"]["set_type"]
           target_load?: number | null
@@ -206,6 +208,7 @@ export type Database = {
           created_at?: string
           exercise_id?: string
           id?: string
+          note?: string | null
           position?: number
           set_type?: Database["public"]["Enums"]["set_type"]
           target_load?: number | null
@@ -443,8 +446,12 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          is_nutritionist: boolean
+          is_personal_trainer: boolean
           personal_id: string | null
           phone: string | null
+          registry_number: string | null
+          registry_type: Database["public"]["Enums"]["professional_registry"] | null
           updated_at: string
         }
         Insert: {
@@ -452,8 +459,12 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id: string
+          is_nutritionist?: boolean
+          is_personal_trainer?: boolean
           personal_id?: string | null
           phone?: string | null
+          registry_number?: string | null
+          registry_type?: Database["public"]["Enums"]["professional_registry"] | null
           updated_at?: string
         }
         Update: {
@@ -461,9 +472,124 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          is_nutritionist?: boolean
+          is_personal_trainer?: boolean
           personal_id?: string | null
           phone?: string | null
+          registry_number?: string | null
+          registry_type?: Database["public"]["Enums"]["professional_registry"] | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      anamnesis: {
+        Row: {
+          activity_level: Database["public"]["Enums"]["activity_level"]
+          age: number
+          aluno_id: string
+          assessed_at: string
+          bmr: number
+          carbs_g: number
+          clinical_notes: string | null
+          created_at: string
+          fat_g: number
+          goal: Database["public"]["Enums"]["fitness_goal"]
+          height_cm: number
+          id: string
+          is_active: boolean
+          kcal_target: number
+          personal_id: string
+          protein_g: number
+          restrictions: string | null
+          sex: string
+          tdee: number
+          updated_at: string
+          weight_kg: number
+        }
+        Insert: {
+          activity_level: Database["public"]["Enums"]["activity_level"]
+          age: number
+          aluno_id: string
+          assessed_at?: string
+          bmr: number
+          carbs_g: number
+          clinical_notes?: string | null
+          created_at?: string
+          fat_g: number
+          goal: Database["public"]["Enums"]["fitness_goal"]
+          height_cm: number
+          id?: string
+          is_active?: boolean
+          kcal_target: number
+          personal_id: string
+          protein_g: number
+          restrictions?: string | null
+          sex: string
+          tdee: number
+          updated_at?: string
+          weight_kg: number
+        }
+        Update: {
+          activity_level?: Database["public"]["Enums"]["activity_level"]
+          age?: number
+          aluno_id?: string
+          assessed_at?: string
+          bmr?: number
+          carbs_g?: number
+          clinical_notes?: string | null
+          created_at?: string
+          fat_g?: number
+          goal?: Database["public"]["Enums"]["fitness_goal"]
+          height_cm?: number
+          id?: string
+          is_active?: boolean
+          kcal_target?: number
+          personal_id?: string
+          protein_g?: number
+          restrictions?: string | null
+          sex?: string
+          tdee?: number
+          updated_at?: string
+          weight_kg?: number
+        }
+        Relationships: []
+      }
+      student_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          full_name: string | null
+          id: string
+          personal_id: string
+          status: string
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          full_name?: string | null
+          id?: string
+          personal_id: string
+          status?: string
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          full_name?: string | null
+          id?: string
+          personal_id?: string
+          status?: string
+          token?: string
         }
         Relationships: []
       }
@@ -580,9 +706,75 @@ export type Database = {
           },
         ]
       }
+      workout_routines: {
+        Row: {
+          aluno_id: string | null
+          auto_archive_on_end: boolean
+          created_at: string
+          difficulty: string | null
+          ends_at: string | null
+          hide_before_start: boolean
+          id: string
+          is_template: boolean
+          level: Database["public"]["Enums"]["routine_level"]
+          name: string
+          notes: string | null
+          objective: string | null
+          personal_id: string
+          routine_kind: Database["public"]["Enums"]["routine_kind"]
+          schedule_type: Database["public"]["Enums"]["routine_schedule"]
+          starts_at: string | null
+          status: Database["public"]["Enums"]["routine_status"]
+          target_sex: Database["public"]["Enums"]["routine_target_sex"]
+          updated_at: string
+        }
+        Insert: {
+          aluno_id?: string | null
+          auto_archive_on_end?: boolean
+          created_at?: string
+          difficulty?: string | null
+          ends_at?: string | null
+          hide_before_start?: boolean
+          id?: string
+          is_template?: boolean
+          level?: Database["public"]["Enums"]["routine_level"]
+          name: string
+          notes?: string | null
+          objective?: string | null
+          personal_id: string
+          routine_kind?: Database["public"]["Enums"]["routine_kind"]
+          schedule_type?: Database["public"]["Enums"]["routine_schedule"]
+          starts_at?: string | null
+          status?: Database["public"]["Enums"]["routine_status"]
+          target_sex?: Database["public"]["Enums"]["routine_target_sex"]
+          updated_at?: string
+        }
+        Update: {
+          aluno_id?: string | null
+          auto_archive_on_end?: boolean
+          created_at?: string
+          difficulty?: string | null
+          ends_at?: string | null
+          hide_before_start?: boolean
+          id?: string
+          is_template?: boolean
+          level?: Database["public"]["Enums"]["routine_level"]
+          name?: string
+          notes?: string | null
+          objective?: string | null
+          personal_id?: string
+          routine_kind?: Database["public"]["Enums"]["routine_kind"]
+          schedule_type?: Database["public"]["Enums"]["routine_schedule"]
+          starts_at?: string | null
+          status?: Database["public"]["Enums"]["routine_status"]
+          target_sex?: Database["public"]["Enums"]["routine_target_sex"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       workouts: {
         Row: {
-          aluno_id: string
+          aluno_id: string | null
           category: Database["public"]["Enums"]["workout_category"]
           created_at: string
           estimated_minutes: number | null
@@ -591,11 +783,12 @@ export type Database = {
           letter: string
           muscles: string | null
           personal_id: string | null
+          routine_id: string | null
           title: string
           updated_at: string
         }
         Insert: {
-          aluno_id: string
+          aluno_id?: string | null
           category?: Database["public"]["Enums"]["workout_category"]
           created_at?: string
           estimated_minutes?: number | null
@@ -604,11 +797,12 @@ export type Database = {
           letter?: string
           muscles?: string | null
           personal_id?: string | null
+          routine_id?: string | null
           title: string
           updated_at?: string
         }
         Update: {
-          aluno_id?: string
+          aluno_id?: string | null
           category?: Database["public"]["Enums"]["workout_category"]
           created_at?: string
           estimated_minutes?: number | null
@@ -617,10 +811,19 @@ export type Database = {
           letter?: string
           muscles?: string | null
           personal_id?: string | null
+          routine_id?: string | null
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "workouts_routine_id_fkey"
+            columns: ["routine_id"]
+            isOneToOne: false
+            referencedRelation: "workout_routines"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -629,6 +832,37 @@ export type Database = {
     Functions: {
       auto_close_stale_sessions: { Args: never; Returns: number }
       can_see_feed: { Args: { _personal_id: string }; Returns: boolean }
+      complete_student_invitation: { Args: { _token: string }; Returns: undefined }
+      count_my_students: { Args: never; Returns: number }
+      create_student_invitation: {
+        Args: { _email: string; _full_name?: string | null }
+        Returns: {
+          invitation_id: string
+          invite_url: string
+          token: string
+        }[]
+      }
+      get_invitation_public: {
+        Args: { _token: string }
+        Returns: {
+          email: string
+          expires_at: string
+          full_name: string | null
+          id: string
+          is_nutritionist: boolean
+          is_personal_trainer: boolean
+          personal_name: string | null
+          status: string
+        }[]
+      }
+      get_my_students: {
+        Args: never
+        Returns: {
+          created_at: string
+          full_name: string | null
+          id: string
+        }[]
+      }
       get_primary_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -640,9 +874,24 @@ export type Database = {
         }
         Returns: boolean
       }
+      repair_my_student_link: { Args: never; Returns: undefined }
+      refresh_workout_routine_statuses: { Args: never; Returns: undefined }
+      clone_workout_routine: {
+        Args: {
+          _source_routine_id: string
+          _target_aluno_id: string
+          _name?: string | null
+          _starts_at?: string | null
+          _ends_at?: string | null
+        }
+        Returns: string
+      }
     }
     Enums: {
+      activity_level: "sedentario" | "leve" | "moderado" | "intenso" | "atleta"
       app_role: "admin" | "personal" | "aluno"
+      fitness_goal: "perda_peso" | "ganho_massa" | "definicao" | "manutencao" | "performance"
+      professional_registry: "cref" | "crn"
       meal_slot:
         | "cafe"
         | "lanche_manha"
@@ -651,6 +900,11 @@ export type Database = {
         | "jantar"
         | "ceia"
       post_kind: "treino" | "dieta" | "evolucao" | "livre"
+      routine_kind: "treinos" | "aerobico"
+      routine_level: "adaptacao" | "iniciante" | "intermediario" | "avancado"
+      routine_schedule: "por_letra" | "por_dia_semana"
+      routine_status: "scheduled" | "active" | "archived"
+      routine_target_sex: "masculino" | "feminino" | "unissex"
       session_status: "em_andamento" | "concluido" | "encerrado_auto"
       set_type: "normal" | "drop" | "falha" | "rest_pause"
       workout_category:

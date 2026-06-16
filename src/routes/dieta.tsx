@@ -5,6 +5,8 @@ import { Apple, Plus, Coffee, UtensilsCrossed, Cookie, Moon, Sun, Trash2, X } fr
 import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
 import { PageHeader } from "@/components/PageHeader";
+import { ProfessionalStudentWorkspace } from "@/components/professional/ProfessionalStudentWorkspace";
+import { StudentDietPanel } from "@/components/professional/StudentDietPanel";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -29,6 +31,37 @@ const SLOTS = [
 type SlotId = (typeof SLOTS)[number]["id"];
 
 function DietaPage() {
+  const { role, loading } = useAuth();
+  const isProfessional = role === "personal" || role === "admin";
+
+  if (loading) {
+    return (
+      <AppShell>
+        <div className="min-h-[50vh] flex items-center justify-center text-sm text-muted-foreground">
+          Carregando…
+        </div>
+      </AppShell>
+    );
+  }
+
+  if (isProfessional) return <ProfessionalDietaPage />;
+  return <StudentDietaPage />;
+}
+
+function ProfessionalDietaPage() {
+  return (
+    <AppShell>
+      <PageHeader title="Dieta" subtitle="Prescreva o plano alimentar" />
+      <ProfessionalStudentWorkspace subtitle="Selecione o aluno para montar refeições e metas">
+        {({ alunoId, personalId }) => (
+          <StudentDietPanel key={alunoId} alunoId={alunoId} personalId={personalId} />
+        )}
+      </ProfessionalStudentWorkspace>
+    </AppShell>
+  );
+}
+
+function StudentDietaPage() {
   const [tab, setTab] = useState<"plano" | "diario">("diario");
 
   return (
