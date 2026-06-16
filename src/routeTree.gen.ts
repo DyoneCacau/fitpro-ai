@@ -19,6 +19,7 @@ import { Route as DietaRouteImport } from './routes/dieta'
 import { Route as AvaliacoesRouteImport } from './routes/avaliacoes'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AlunosRouteImport } from './routes/alunos'
+import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TreinoIdRouteImport } from './routes/treino.$id'
 import { Route as ConviteTokenRouteImport } from './routes/convite.$token'
@@ -74,6 +75,11 @@ const AlunosRoute = AlunosRouteImport.update({
   path: '/alunos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AgendaRoute = AgendaRouteImport.update({
+  id: '/agenda',
+  path: '/agenda',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -97,6 +103,7 @@ const AlunosAlunoIdRoute = AlunosAlunoIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/agenda': typeof AgendaRoute
   '/alunos': typeof AlunosRouteWithChildren
   '/auth': typeof AuthRoute
   '/avaliacoes': typeof AvaliacoesRoute
@@ -113,6 +120,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/agenda': typeof AgendaRoute
   '/alunos': typeof AlunosRouteWithChildren
   '/auth': typeof AuthRoute
   '/avaliacoes': typeof AvaliacoesRoute
@@ -130,6 +138,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/agenda': typeof AgendaRoute
   '/alunos': typeof AlunosRouteWithChildren
   '/auth': typeof AuthRoute
   '/avaliacoes': typeof AvaliacoesRoute
@@ -148,6 +157,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/agenda'
     | '/alunos'
     | '/auth'
     | '/avaliacoes'
@@ -164,6 +174,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/agenda'
     | '/alunos'
     | '/auth'
     | '/avaliacoes'
@@ -180,6 +191,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/agenda'
     | '/alunos'
     | '/auth'
     | '/avaliacoes'
@@ -197,6 +209,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AgendaRoute: typeof AgendaRoute
   AlunosRoute: typeof AlunosRouteWithChildren
   AuthRoute: typeof AuthRoute
   AvaliacoesRoute: typeof AvaliacoesRoute
@@ -283,6 +296,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AlunosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/agenda': {
+      id: '/agenda'
+      path: '/agenda'
+      fullPath: '/agenda'
+      preLoaderRoute: typeof AgendaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -327,6 +347,7 @@ const AlunosRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AgendaRoute: AgendaRoute,
   AlunosRoute: AlunosRouteWithChildren,
   AuthRoute: AuthRoute,
   AvaliacoesRoute: AvaliacoesRoute,

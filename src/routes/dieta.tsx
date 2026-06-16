@@ -1,14 +1,29 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { Apple, Plus, Coffee, UtensilsCrossed, Cookie, Moon, Sun, Trash2, X } from "lucide-react";
+import { Apple, Pill, Plus, Trash2, X, ClipboardCheck } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
 import { PageHeader } from "@/components/PageHeader";
 import { ProfessionalStudentWorkspace } from "@/components/professional/ProfessionalStudentWorkspace";
+import { DietTemplateLibrary } from "@/components/professional/DietTemplateLibrary";
 import { StudentDietPanel } from "@/components/professional/StudentDietPanel";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import {
+  MEAL_SLOTS,
+  fetchStudentActiveDietPlan,
+  formatFoodItemLine,
+  formatFoodQuantity,
+  getMealSlotMeta,
+  logFoodFromPlanItem,
+  logMealFromPlan,
+  sortSupplements,
+  sumMealItems,
+  todayIsoDate,
+  type DietMeal,
+  type MealSlotId,
+} from "@/lib/diet";
 
 export const Route = createFileRoute("/dieta")({
   head: () => ({ meta: [{ title: "Dieta — FitPro AI" }] }),
@@ -18,17 +33,6 @@ export const Route = createFileRoute("/dieta")({
     </AuthGate>
   ),
 });
-
-const SLOTS = [
-  { id: "cafe", label: "Café da manhã", icon: Coffee, time: "07:00" },
-  { id: "lanche_manha", label: "Lanche manhã", icon: Cookie, time: "10:00" },
-  { id: "almoco", label: "Almoço", icon: UtensilsCrossed, time: "12:30" },
-  { id: "lanche_tarde", label: "Lanche tarde", icon: Cookie, time: "16:00" },
-  { id: "jantar", label: "Jantar", icon: Sun, time: "19:30" },
-  { id: "ceia", label: "Ceia", icon: Moon, time: "22:00" },
-] as const;
-
-type SlotId = (typeof SLOTS)[number]["id"];
 
 function DietaPage() {
   const { role, loading } = useAuth();
@@ -49,14 +53,50 @@ function DietaPage() {
 }
 
 function ProfessionalDietaPage() {
+  const [view, setView] = useState<"aluno" | "biblioteca">("aluno");
+
   return (
     <AppShell>
-      <PageHeader title="Dieta" subtitle="Prescreva o plano alimentar" />
-      <ProfessionalStudentWorkspace subtitle="Selecione o aluno para montar refeições e metas">
-        {({ alunoId, personalId }) => (
-          <StudentDietPanel key={alunoId} alunoId={alunoId} personalId={personalId} />
-        )}
-      </ProfessionalStudentWorkspace>
+      <PageHeader title="Dieta" subtitle="Prescrição alimentar e modelos reutilizáveis" />
+
+      <div className="px-5 pb-2">
+        <div className="grid grid-cols-2 gap-1 rounded-2xl bg-card border border-border p-1">
+          <button
+            type="button"
+            onClick={() => setView("aluno")}
+            className={`rounded-xl py-2 text-[11px] font-bold ${
+              view === "aluno"
+                ? "bg-gradient-primary text-primary-foreground shadow-glow"
+                : "text-muted-foreground"
+            }`}
+          >
+            Por aluno
+          </button>
+          <button
+            type="button"
+            onClick={() => setView("biblioteca")}
+            className={`rounded-xl py-2 text-[11px] font-bold ${
+              view === "biblioteca"
+                ? "bg-gradient-primary text-primary-foreground shadow-glow"
+                : "text-muted-foreground"
+            }`}
+          >
+            Biblioteca de planos
+          </button>
+        </div>
+      </div>
+
+      {view === "biblioteca" ? (
+        <div className="px-5 py-5 pb-10">
+          <DietTemplateLibrary />
+        </div>
+      ) : (
+        <ProfessionalStudentWorkspace subtitle="Selecione o aluno para montar refeições e metas">
+          {({ alunoId, personalId }) => (
+            <StudentDietPanel key={alunoId} alunoId={alunoId} personalId={personalId} />
+          )}
+        </ProfessionalStudentWorkspace>
+      )}
     </AppShell>
   );
 }
@@ -96,21 +136,13 @@ function StudentDietaPage() {
 function Diario() {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const [adding, setAdding] = useState<SlotId | null>(null);
-  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const [adding, setAdding] = useState<MealSlotId | null>(null);
+  const today = useMemo(() => todayIsoDate(), []);
 
   const { data: plan } = useQuery({
-    queryKey: ["activePlan", user?.id],
+    queryKey: ["activePlanFull", user?.id],
     enabled: !!user?.id,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("diet_plans")
-        .select("*")
-        .eq("aluno_id", user!.id)
-        .eq("is_active", true)
-        .maybeSingle();
-      return data;
-    },
+    queryFn: () => fetchStudentActiveDietPlan(user!.id),
   });
 
   const { data: logs = [] } = useQuery({
@@ -127,6 +159,11 @@ function Diario() {
       return data ?? [];
     },
   });
+
+  const loggedItemIds = useMemo(
+    () => new Set(logs.map((l) => l.source_meal_item_id).filter(Boolean)),
+    [logs],
+  );
 
   const totals = useMemo(() => {
     return logs.reduce(
@@ -147,6 +184,8 @@ function Diario() {
     f: plan?.fat_g ?? 60,
   };
 
+  const meals = (plan?.diet_meals as DietMeal[] | undefined) ?? [];
+
   const delLog = useMutation({
     mutationFn: async (id: string) => {
       await supabase.from("food_logs").delete().eq("id", id);
@@ -154,15 +193,30 @@ function Diario() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["foodLogs"] }),
   });
 
+  const logFromPlan = useMutation({
+    mutationFn: async ({ slot, items }: { slot: MealSlotId; items: DietMeal["diet_meal_items"] }) => {
+      const pending = items.filter((item) => !loggedItemIds.has(item.id));
+      await logMealFromPlan(user!.id, slot, pending, today);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["foodLogs"] }),
+  });
+
+  const logSingleItem = useMutation({
+    mutationFn: async ({ slot, item }: { slot: MealSlotId; item: DietMeal["diet_meal_items"][0] }) => {
+      await logFoodFromPlanItem(user!.id, slot, item, today);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["foodLogs"] }),
+  });
+
   return (
     <div className="px-5 pt-5 pb-5 space-y-5">
-      {/* Macros card */}
       <div className="rounded-3xl bg-gradient-card border border-border p-5 shadow-card">
         <div className="flex items-end justify-between mb-4">
           <div>
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Hoje</p>
             <p className="text-3xl font-bold">
-              {Math.round(totals.kcal)} <span className="text-base text-muted-foreground">/ {target.kcal} kcal</span>
+              {Math.round(totals.kcal)}{" "}
+              <span className="text-base text-muted-foreground">/ {target.kcal} kcal</span>
             </p>
           </div>
           <div className="text-right">
@@ -185,10 +239,14 @@ function Diario() {
         </div>
       </div>
 
-      {SLOTS.map((slot) => {
+      {MEAL_SLOTS.map((slot) => {
         const slotLogs = logs.filter((l) => l.slot === slot.id);
         const slotKcal = slotLogs.reduce((a, l) => a + Number(l.kcal ?? 0), 0);
+        const planMeal = meals.find((m) => m.slot === slot.id);
+        const planItems = planMeal?.diet_meal_items ?? [];
+        const pendingPlanItems = planItems.filter((item) => !loggedItemIds.has(item.id));
         const Icon = slot.icon;
+
         return (
           <div key={slot.id} className="rounded-2xl bg-card border border-border overflow-hidden">
             <div className="flex items-center gap-3 p-4 border-b border-border">
@@ -208,6 +266,41 @@ function Diario() {
                 <Plus className="h-4 w-4" />
               </button>
             </div>
+
+            {pendingPlanItems.length > 0 && (
+              <div className="px-4 py-3 border-b border-primary/20 bg-primary/5">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <p className="text-[11px] font-bold text-primary">Do seu plano</p>
+                  <button
+                    type="button"
+                    disabled={logFromPlan.isPending}
+                    onClick={() => logFromPlan.mutate({ slot: slot.id, items: planItems })}
+                    className="inline-flex items-center gap-1 rounded-lg bg-primary/15 px-2 py-1 text-[10px] font-bold text-primary"
+                  >
+                    <ClipboardCheck className="size-3" />
+                    Registrar tudo
+                  </button>
+                </div>
+                <div className="space-y-1.5">
+                  {pendingPlanItems.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between gap-2 text-xs">
+                      <span className="truncate">
+                        {item.food} · {formatFoodQuantity(item.quantity)}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={logSingleItem.isPending}
+                        onClick={() => logSingleItem.mutate({ slot: slot.id, item })}
+                        className="shrink-0 text-[10px] font-bold text-primary"
+                      >
+                        Registrar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {slotLogs.length > 0 && (
               <div className="divide-y divide-border">
                 {slotLogs.map((l) => (
@@ -215,7 +308,8 @@ function Diario() {
                     <div className="flex-1">
                       <p className="text-sm font-medium">{l.food}</p>
                       <p className="text-xs text-muted-foreground">
-                        {l.quantity}{l.unit} · {Math.round(Number(l.kcal))}kcal · P{Math.round(Number(l.protein_g))} C{Math.round(Number(l.carbs_g))} G{Math.round(Number(l.fat_g))}
+                        {formatFoodQuantity(Number(l.quantity))}
+                        {Number(l.kcal) > 0 && ` · ${Math.round(Number(l.kcal))} kcal`}
                       </p>
                     </div>
                     <button
@@ -252,7 +346,8 @@ function Macro({ label, value, target, color }: { label: string; value: number; 
     <div className="rounded-xl bg-background/40 border border-border p-3">
       <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
       <p className="text-base font-bold mt-0.5">
-        {value}<span className="text-xs text-muted-foreground">/{target}g</span>
+        {value}
+        <span className="text-xs text-muted-foreground">/{target}g</span>
       </p>
       <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
         <div className="h-full transition-all" style={{ width: `${pct}%`, background: color }} />
@@ -266,18 +361,13 @@ function AddFoodModal({
   onClose,
   onSaved,
 }: {
-  slot: SlotId;
+  slot: MealSlotId;
   onClose: () => void;
   onSaved: () => void;
 }) {
   const { user } = useAuth();
   const [food, setFood] = useState("");
   const [qty, setQty] = useState(100);
-  const [unit, setUnit] = useState("g");
-  const [kcal, setKcal] = useState(0);
-  const [p, setP] = useState(0);
-  const [c, setC] = useState(0);
-  const [f, setF] = useState(0);
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
@@ -288,11 +378,11 @@ function AddFoodModal({
       slot,
       food: food.trim(),
       quantity: qty,
-      unit,
-      kcal,
-      protein_g: p,
-      carbs_g: c,
-      fat_g: f,
+      unit: "g",
+      kcal: 0,
+      protein_g: 0,
+      carbs_g: 0,
+      fat_g: 0,
     });
     setSaving(false);
     onSaved();
@@ -306,39 +396,28 @@ function AddFoodModal({
       >
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold">Adicionar alimento</h3>
-          <button onClick={onClose} className="rounded-full bg-secondary p-1.5"><X className="h-4 w-4" /></button>
+          <button onClick={onClose} className="rounded-full bg-secondary p-1.5">
+            <X className="h-4 w-4" />
+          </button>
         </div>
         <div className="space-y-3">
           <Field label="Alimento">
-            <input value={food} onChange={(e) => setFood(e.target.value)} placeholder="Ex: Arroz integral cozido" className="w-full bg-background border border-input rounded-xl px-4 py-3 text-sm outline-none focus:border-primary" />
+            <input
+              value={food}
+              onChange={(e) => setFood(e.target.value)}
+              placeholder="Ex.: arroz, feijão, frango grelhado"
+              className="w-full bg-background border border-input rounded-xl px-4 py-3 text-sm outline-none focus:border-primary"
+            />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Quantidade">
-              <input type="number" value={qty} onChange={(e) => setQty(+e.target.value)} className="w-full bg-background border border-input rounded-xl px-4 py-3 text-sm outline-none focus:border-primary" />
-            </Field>
-            <Field label="Unidade">
-              <select value={unit} onChange={(e) => setUnit(e.target.value)} className="w-full bg-background border border-input rounded-xl px-4 py-3 text-sm outline-none focus:border-primary">
-                <option value="g">g</option>
-                <option value="ml">ml</option>
-                <option value="un">un</option>
-                <option value="col">col. sopa</option>
-              </select>
-            </Field>
-          </div>
-          <Field label="Calorias (kcal)">
-            <input type="number" value={kcal} onChange={(e) => setKcal(+e.target.value)} className="w-full bg-background border border-input rounded-xl px-4 py-3 text-sm outline-none focus:border-primary" />
+          <Field label="Quantidade (g)">
+            <input
+              type="number"
+              min={1}
+              value={qty}
+              onChange={(e) => setQty(+e.target.value)}
+              className="w-full bg-background border border-input rounded-xl px-4 py-3 text-sm outline-none focus:border-primary"
+            />
           </Field>
-          <div className="grid grid-cols-3 gap-2">
-            <Field label="Prot (g)">
-              <input type="number" value={p} onChange={(e) => setP(+e.target.value)} className="w-full bg-background border border-input rounded-xl px-3 py-2.5 text-sm outline-none focus:border-primary" />
-            </Field>
-            <Field label="Carb (g)">
-              <input type="number" value={c} onChange={(e) => setC(+e.target.value)} className="w-full bg-background border border-input rounded-xl px-3 py-2.5 text-sm outline-none focus:border-primary" />
-            </Field>
-            <Field label="Gord (g)">
-              <input type="number" value={f} onChange={(e) => setF(+e.target.value)} className="w-full bg-background border border-input rounded-xl px-3 py-2.5 text-sm outline-none focus:border-primary" />
-            </Field>
-          </div>
         </div>
         <button
           onClick={save}
@@ -366,15 +445,7 @@ function Plano() {
   const { data: plan } = useQuery({
     queryKey: ["dietPlanFull", user?.id],
     enabled: !!user?.id,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("diet_plans")
-        .select("*, diet_meals(*, diet_meal_items(*))")
-        .eq("aluno_id", user!.id)
-        .eq("is_active", true)
-        .maybeSingle();
-      return data;
-    },
+    queryFn: () => fetchStudentActiveDietPlan(user!.id),
   });
 
   if (!plan) {
@@ -389,13 +460,8 @@ function Plano() {
     );
   }
 
-  const meals = (plan.diet_meals ?? []) as Array<{
-    id: string;
-    slot: SlotId;
-    time_label: string | null;
-    description: string | null;
-    diet_meal_items: Array<{ id: string; food: string; quantity: number; unit: string; kcal: number }>;
-  }>;
+  const meals = (plan.diet_meals ?? []) as DietMeal[];
+  const supplements = sortSupplements(plan.diet_supplements);
 
   return (
     <div className="px-5 py-5 space-y-4">
@@ -403,20 +469,21 @@ function Plano() {
         <p className="text-xs uppercase tracking-wider text-muted-foreground">Plano</p>
         <h3 className="text-xl font-bold mt-1">{plan.name}</h3>
         <div className="mt-3 grid grid-cols-4 gap-2 text-center">
-          <Pill v={plan.kcal_target} l="kcal" />
-          <Pill v={plan.protein_g} l="prot" />
-          <Pill v={plan.carbs_g} l="carb" />
-          <Pill v={plan.fat_g} l="gord" />
+          <MacroPill v={plan.kcal_target} l="kcal" />
+          <MacroPill v={plan.protein_g} l="prot" />
+          <MacroPill v={plan.carbs_g} l="carb" />
+          <MacroPill v={plan.fat_g} l="gord" />
         </div>
       </div>
-      {meals.length === 0 && (
+      {meals.length === 0 && supplements.length === 0 && (
         <p className="text-sm text-muted-foreground text-center py-8">
-          Plano sem refeições cadastradas ainda.
+          Plano sem refeições ou suplementos cadastrados ainda.
         </p>
       )}
       {meals.map((m) => {
-        const meta = SLOTS.find((s) => s.id === m.slot);
-        const Icon = meta?.icon ?? UtensilsCrossed;
+        const meta = getMealSlotMeta(m.slot);
+        const Icon = meta.icon;
+        const mealTotals = sumMealItems(m.diet_meal_items ?? []);
         return (
           <div key={m.id} className="rounded-2xl bg-card border border-border p-4">
             <div className="flex items-center gap-3 mb-3">
@@ -424,29 +491,70 @@ function Plano() {
                 <Icon className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm font-bold">{meta?.label ?? m.slot}</p>
-                <p className="text-xs text-muted-foreground">{m.time_label ?? meta?.time}</p>
+                <p className="text-sm font-bold">{meta.label}</p>
+                <p className="text-xs text-muted-foreground">
+                  {m.time_label ?? meta.time}
+                  {mealTotals.kcal > 0
+                    ? ` · ${Math.round(mealTotals.kcal)} kcal`
+                    : m.diet_meal_items.length > 0
+                      ? ` · ${m.diet_meal_items.length} itens`
+                      : ""}
+                </p>
               </div>
             </div>
-            {m.description && <p className="text-xs text-muted-foreground mb-2">{m.description}</p>}
+            {m.description && (
+              <p className="text-xs text-muted-foreground mb-2 rounded-lg bg-muted/30 p-2">{m.description}</p>
+            )}
             <ul className="space-y-1.5">
               {m.diet_meal_items.map((it) => (
-                <li key={it.id} className="flex justify-between text-sm">
-                  <span>{it.food}</span>
-                  <span className="text-muted-foreground">
-                    {it.quantity}{it.unit} · {Math.round(it.kcal)}kcal
+                <li key={it.id} className="flex justify-between text-sm gap-2">
+                  <span className="min-w-0">
+                    {it.food}
+                    {it.notes && (
+                      <span className="block text-[10px] text-muted-foreground">{it.notes}</span>
+                    )}
                   </span>
+                  <span className="text-muted-foreground shrink-0">{formatFoodItemLine(it)}</span>
                 </li>
               ))}
             </ul>
           </div>
         );
       })}
+      {supplements.length > 0 && (
+        <div className="rounded-2xl bg-card border border-border p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15 text-primary">
+              <Pill className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-bold">Suplementos alimentares</p>
+              <p className="text-xs text-muted-foreground">
+                {supplements.length} {supplements.length === 1 ? "item" : "itens"}
+              </p>
+            </div>
+          </div>
+          <ul className="space-y-2">
+            {supplements.map((s) => (
+              <li key={s.id} className="rounded-xl bg-background/40 border border-border px-3 py-2.5">
+                <p className="text-sm font-medium">{s.name}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {s.dosage.trim() || "—"}
+                  {s.timing?.trim() && ` · ${s.timing.trim()}`}
+                </p>
+                {s.notes?.trim() && (
+                  <p className="text-[10px] text-muted-foreground mt-1">{s.notes}</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
 
-function Pill({ v, l }: { v: number | null; l: string }) {
+function MacroPill({ v, l }: { v: number | null; l: string }) {
   return (
     <div className="rounded-xl bg-background/40 border border-border py-2">
       <p className="text-base font-bold leading-none">{v ?? 0}</p>

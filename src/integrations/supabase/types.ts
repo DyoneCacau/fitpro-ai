@@ -183,6 +183,87 @@ export type Database = {
         }
         Relationships: []
       }
+      student_appointments: {
+        Row: {
+          aluno_id: string
+          created_at: string
+          duration_minutes: number
+          id: string
+          kind: Database["public"]["Enums"]["appointment_kind"]
+          notes: string | null
+          personal_id: string
+          recurrence_days: number | null
+          scheduled_at: string
+          status: Database["public"]["Enums"]["appointment_status"]
+          updated_at: string
+        }
+        Insert: {
+          aluno_id: string
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          kind?: Database["public"]["Enums"]["appointment_kind"]
+          notes?: string | null
+          personal_id: string
+          recurrence_days?: number | null
+          scheduled_at: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          updated_at?: string
+        }
+        Update: {
+          aluno_id?: string
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          kind?: Database["public"]["Enums"]["appointment_kind"]
+          notes?: string | null
+          personal_id?: string
+          recurrence_days?: number | null
+          scheduled_at?: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      student_follow_ups: {
+        Row: {
+          aluno_id: string
+          created_at: string
+          id: string
+          interval_days: number
+          is_active: boolean
+          kind: Database["public"]["Enums"]["appointment_kind"]
+          last_visit_at: string | null
+          notes: string | null
+          personal_id: string
+          updated_at: string
+        }
+        Insert: {
+          aluno_id: string
+          created_at?: string
+          id?: string
+          interval_days?: number
+          is_active?: boolean
+          kind?: Database["public"]["Enums"]["appointment_kind"]
+          last_visit_at?: string | null
+          notes?: string | null
+          personal_id: string
+          updated_at?: string
+        }
+        Update: {
+          aluno_id?: string
+          created_at?: string
+          id?: string
+          interval_days?: number
+          is_active?: boolean
+          kind?: Database["public"]["Enums"]["appointment_kind"]
+          last_visit_at?: string | null
+          notes?: string | null
+          personal_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       exercise_sets: {
         Row: {
           created_at: string
@@ -886,10 +967,27 @@ export type Database = {
         }
         Returns: string
       }
+      complete_appointment: {
+        Args: { _appointment_id: string }
+        Returns: string
+      }
+      create_student_appointment: {
+        Args: {
+          _aluno_id: string
+          _scheduled_at: string
+          _duration_minutes?: number
+          _kind?: Database["public"]["Enums"]["appointment_kind"]
+          _notes?: string | null
+          _recurrence_days?: number | null
+        }
+        Returns: string
+      }
     }
     Enums: {
       activity_level: "sedentario" | "leve" | "moderado" | "intenso" | "atleta"
       app_role: "admin" | "personal" | "aluno"
+      appointment_kind: "treino" | "retorno" | "avaliacao" | "consulta"
+      appointment_status: "scheduled" | "completed" | "cancelled"
       fitness_goal: "perda_peso" | "ganho_massa" | "definicao" | "manutencao" | "performance"
       professional_registry: "cref" | "crn"
       meal_slot:

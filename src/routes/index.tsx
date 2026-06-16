@@ -4,6 +4,7 @@ import { GraduationCap, ChevronRight, LogOut } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
 import { MfitStudentHome } from "@/components/student/MfitStudentHome";
+import { ProfessionalHomeAgenda } from "@/components/professional/ProfessionalHomeAgenda";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatAppRole } from "@/lib/labels";
@@ -96,6 +97,16 @@ function HomeInner() {
           </div>
         </Link>
       </header>
+
+      {user?.id && (
+        <ProfessionalHomeAgenda
+          personalId={user.id}
+          students={students.map((s) => ({
+            id: s.id as string,
+            full_name: s.full_name as string | null,
+          }))}
+        />
+      )}
     </AppShell>
   );
 }

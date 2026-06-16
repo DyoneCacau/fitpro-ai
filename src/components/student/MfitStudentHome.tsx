@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ClipboardList, Dumbbell, LineChart } from "lucide-react";
+import { CalendarClock, ClipboardList, Dumbbell, LineChart } from "lucide-react";
 import { useLinkedProfessional } from "@/hooks/use-linked-professional";
 import { formatProfessionalRegistry } from "@/lib/professional";
 import { greetingForNow } from "@/lib/workout-display";
@@ -16,6 +16,7 @@ const WEEK = [
 
 const MENU = [
   { to: "/treinos", label: "Treinos", icon: Dumbbell },
+  { to: "/agenda", label: "Agenda", icon: CalendarClock },
   { to: "/avaliacoes", label: "Avaliações", icon: ClipboardList },
   { to: "/avaliacoes", label: "Meu progresso", icon: LineChart },
 ] as const;

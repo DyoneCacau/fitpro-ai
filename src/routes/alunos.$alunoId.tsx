@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Apple, Calculator, Dumbbell, Loader2 } from "lucide-react";
+import { ArrowLeft, Apple, Calculator, CalendarCheck, Dumbbell, Loader2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
 import { StudentAnamnesisPanel } from "@/components/professional/StudentAnamnesisPanel";
 import { StudentDietPanel } from "@/components/professional/StudentDietPanel";
+import { StudentAgendaPanel } from "@/components/professional/StudentAgendaPanel";
 import { StudentWorkoutsPanel } from "@/components/professional/StudentWorkoutsPanel";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/alunos/$alunoId")({
   ),
 });
 
-type Tab = "anamnese" | "treinos" | "dieta";
+type Tab = "anamnese" | "treinos" | "dieta" | "agenda";
 
 function StudentDetailPage() {
   const { alunoId } = Route.useParams();
@@ -67,6 +68,7 @@ function StudentDetailPage() {
     { id: "anamnese", label: "Anamnese", icon: Calculator },
     { id: "treinos", label: "Treinos", icon: Dumbbell },
     { id: "dieta", label: "Dieta", icon: Apple },
+    { id: "agenda", label: "Agenda", icon: CalendarCheck },
   ];
 
   return (
@@ -80,7 +82,7 @@ function StudentDetailPage() {
       </header>
 
       <div className="px-5 pt-4">
-        <div className="grid grid-cols-3 gap-1 rounded-2xl bg-card border border-border p-1">
+        <div className="grid grid-cols-4 gap-1 rounded-2xl bg-card border border-border p-1">
           {tabs.map((t) => {
             const Icon = t.icon;
             const active = tab === t.id;
@@ -105,6 +107,7 @@ function StudentDetailPage() {
         {tab === "anamnese" && <StudentAnamnesisPanel alunoId={alunoId} personalId={user.id} />}
         {tab === "treinos" && <StudentWorkoutsPanel alunoId={alunoId} personalId={user.id} />}
         {tab === "dieta" && <StudentDietPanel alunoId={alunoId} personalId={user.id} />}
+        {tab === "agenda" && <StudentAgendaPanel alunoId={alunoId} personalId={user.id} />}
       </section>
     </AppShell>
   );

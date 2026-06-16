@@ -2,65 +2,69 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Apple,
-  Coffee,
-  Cookie,
+  BookOpen,
+  Calculator,
+  Copy,
   Loader2,
-  Moon,
   Plus,
-  Sun,
+  Save,
   Trash2,
-  UtensilsCrossed,
   X,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-
-const MEAL_SLOTS = [
-  { id: "cafe", label: "Café da manhã", icon: Coffee, time: "07:00" },
-  { id: "lanche_manha", label: "Lanche da manhã", icon: Cookie, time: "10:00" },
-  { id: "almoco", label: "Almoço", icon: UtensilsCrossed, time: "12:30" },
-  { id: "lanche_tarde", label: "Lanche da tarde", icon: Cookie, time: "16:00" },
-  { id: "jantar", label: "Jantar", icon: Sun, time: "19:30" },
-  { id: "ceia", label: "Ceia", icon: Moon, time: "22:00" },
-] as const;
-
-type SlotId = (typeof MEAL_SLOTS)[number]["id"];
-
-type MealItem = {
-  id: string;
-  food: string;
-  quantity: number;
-  unit: string;
-  kcal: number | null;
-  protein_g: number | null;
-  carbs_g: number | null;
-  fat_g: number | null;
-};
-
-type Meal = {
-  id: string;
-  slot: SlotId;
-  time_label: string | null;
-  diet_meal_items: MealItem[];
-};
+import { DietSupplementsPanel } from "@/components/professional/DietSupplementsPanel";
+import {
+  MEAL_SLOTS,
+  activateDietMealSlot,
+  cloneDietPlan,
+  fetchDietPlanById,
+  fetchDietTemplates,
+  fetchStudentDietPlan,
+  formatFoodItemLine,
+  ensureDietMeal,
+  ensureDietPlan,
+  getDietErrorMessage,
+  removeDietMeal,
+  sumMealItems,
+  sumPlanMeals,
+  syncDietFromAnamnesis,
+  updateMealDescription,
+  type DietMeal,
+  type DietPlan,
+  type MealSlotId,
+} from "@/lib/diet";
 
 interface Props {
-  alunoId: string;
   personalId: string;
+  alunoId?: string;
+  templatePlanId?: string;
 }
 
-export function StudentDietPanel({ alunoId, personalId }: Props) {
+export function StudentDietPanel({ alunoId, templatePlanId, personalId }: Props) {
   const qc = useQueryClient();
-  const [addingSlot, setAddingSlot] = useState<SlotId | null>(null);
+  const isTemplate = !!templatePlanId;
+  const [addingSlot, setAddingSlot] = useState<MealSlotId | null>(null);
+  const [openedSlots, setOpenedSlots] = useState<Set<MealSlotId>>(new Set());
+  const [activatingSlot, setActivatingSlot] = useState<MealSlotId | null>(null);
+  const [activationError, setActivationError] = useState<string | null>(null);
   const [editingTargets, setEditingTargets] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [targets, setTargets] = useState({ kcal: 2000, protein: 150, carbs: 200, fat: 60 });
+  const [mealNotes, setMealNotes] = useState<Record<string, string>>({});
+  const [editingMealId, setEditingMealId] = useState<string | null>(null);
+
+  const planKey = isTemplate
+    ? ["dietTemplatePlan", templatePlanId]
+    : ["studentDietPlan", alunoId];
 
   const { data: anamnesis } = useQuery({
     queryKey: ["anamnesis", alunoId, personalId],
+    enabled: !!alunoId && !isTemplate,
     queryFn: async () => {
       const { data } = await supabase
         .from("anamnesis")
         .select("kcal_target, protein_g, carbs_g, fat_g")
-        .eq("aluno_id", alunoId)
+        .eq("aluno_id", alunoId!)
         .eq("personal_id", personalId)
         .eq("is_active", true)
         .maybeSingle();
@@ -69,36 +73,25 @@ export function StudentDietPanel({ alunoId, personalId }: Props) {
   });
 
   const { data: plan, isLoading } = useQuery({
-    queryKey: ["studentDietPlan", alunoId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("diet_plans")
-        .select("*, diet_meals(*, diet_meal_items(*))")
-        .eq("aluno_id", alunoId)
-        .eq("personal_id", personalId)
-        .eq("is_active", true)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
+    queryKey: planKey,
+    queryFn: () =>
+      isTemplate
+        ? fetchDietPlanById(templatePlanId!, personalId)
+        : fetchStudentDietPlan(personalId, alunoId!),
+    enabled: isTemplate ? !!templatePlanId : !!alunoId,
   });
 
-  const meals = (plan?.diet_meals as Meal[] | undefined) ?? [];
-
-  const totals = useMemo(() => {
-    return meals.reduce(
-      (acc, meal) => {
-        meal.diet_meal_items?.forEach((item) => {
-          acc.kcal += Number(item.kcal ?? 0);
-          acc.protein += Number(item.protein_g ?? 0);
-          acc.carbs += Number(item.carbs_g ?? 0);
-          acc.fat += Number(item.fat_g ?? 0);
-        });
-        return acc;
-      },
-      { kcal: 0, protein: 0, carbs: 0, fat: 0 },
-    );
-  }, [meals]);
+  const meals = (plan?.diet_meals as DietMeal[] | undefined) ?? [];
+  const activeSlots = useMemo(() => new Set(meals.map((m) => m.slot)), [meals]);
+  const visibleSlots = useMemo(
+    () => MEAL_SLOTS.filter((slot) => activeSlots.has(slot.id) || openedSlots.has(slot.id)),
+    [activeSlots, openedSlots],
+  );
+  const availableSlots = useMemo(
+    () => MEAL_SLOTS.filter((slot) => !activeSlots.has(slot.id) && !openedSlots.has(slot.id)),
+    [activeSlots, openedSlots],
+  );
+  const totals = useMemo(() => sumPlanMeals(meals), [meals]);
 
   const goal = {
     kcal: plan?.kcal_target ?? anamnesis?.kcal_target ?? targets.kcal,
@@ -107,7 +100,12 @@ export function StudentDietPanel({ alunoId, personalId }: Props) {
     fat: plan?.fat_g ?? anamnesis?.fat_g ?? targets.fat,
   };
 
-  const invalidate = () => void qc.invalidateQueries({ queryKey: ["studentDietPlan", alunoId] });
+  const invalidate = () => void qc.invalidateQueries({ queryKey: planKey });
+
+  const syncAnamnesis = useMutation({
+    mutationFn: () => syncDietFromAnamnesis(alunoId!),
+    onSuccess: invalidate,
+  });
 
   const saveTargets = useMutation({
     mutationFn: async () => {
@@ -125,20 +123,33 @@ export function StudentDietPanel({ alunoId, personalId }: Props) {
         return;
       }
       const { error } = await supabase.from("diet_plans").insert({
-        aluno_id: alunoId,
+        aluno_id: alunoId ?? null,
         personal_id: personalId,
-        name: "Plano Alimentar",
+        name: isTemplate ? "Modelo alimentar" : "Plano Alimentar",
         kcal_target: targets.kcal,
         protein_g: targets.protein,
         carbs_g: targets.carbs,
         fat_g: targets.fat,
         is_active: true,
+        ...(isTemplate ? { is_template: true } : {}),
       });
       if (error) throw error;
     },
     onSuccess: () => {
       setEditingTargets(false);
       invalidate();
+    },
+  });
+
+  const saveAsTemplate = useMutation({
+    mutationFn: () =>
+      cloneDietPlan({
+        sourcePlanId: plan!.id,
+        asTemplate: true,
+        templateName: `${plan!.name} (modelo)`,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["dietTemplates", personalId] });
     },
   });
 
@@ -150,38 +161,118 @@ export function StudentDietPanel({ alunoId, personalId }: Props) {
     onSuccess: invalidate,
   });
 
+  const saveMealNotes = useMutation({
+    mutationFn: async ({ mealId, description }: { mealId: string; description: string }) => {
+      await updateMealDescription(mealId, description);
+    },
+    onSuccess: () => {
+      setEditingMealId(null);
+      invalidate();
+    },
+  });
+
+  const removeMeal = useMutation({
+    mutationFn: removeDietMeal,
+    onSuccess: (_, mealId) => {
+      const removed = meals.find((m) => m.id === mealId);
+      if (removed) {
+        setOpenedSlots((prev) => {
+          const next = new Set(prev);
+          next.delete(removed.slot);
+          return next;
+        });
+        if (addingSlot === removed.slot) setAddingSlot(null);
+      }
+      invalidate();
+    },
+  });
+
+  function handleSelectMealSlot(slot: MealSlotId) {
+    setActivationError(null);
+    setOpenedSlots((prev) => new Set(prev).add(slot));
+    setAddingSlot(slot);
+
+    void (async () => {
+      setActivatingSlot(slot);
+      try {
+        await activateDietMealSlot({
+          personalId,
+          alunoId,
+          isTemplate,
+          slot,
+          plan,
+          anamnesisTargets: anamnesis,
+        });
+        await qc.invalidateQueries({ queryKey: planKey });
+        await qc.refetchQueries({ queryKey: planKey });
+      } catch (err) {
+        setActivationError(getDietErrorMessage(err));
+        setOpenedSlots((prev) => {
+          const next = new Set(prev);
+          next.delete(slot);
+          return next;
+        });
+        setAddingSlot((current) => (current === slot ? null : current));
+      } finally {
+        setActivatingSlot(null);
+      }
+    })();
+  }
+
   if (isLoading) {
     return <Loader2 className="size-6 animate-spin text-primary mx-auto mt-8" />;
   }
 
   return (
     <div className="space-y-5">
-      {/* Cabeçalho estilo Dietbox — metas do plano */}
       <div className="rounded-3xl bg-gradient-card border border-border p-5 shadow-card">
         <div className="flex items-start justify-between gap-3 mb-4">
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Plano alimentar</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              {isTemplate ? "Modelo alimentar" : "Plano alimentar"}
+            </p>
             <h3 className="text-lg font-bold mt-0.5">{plan?.name ?? "Prescrição dietética"}</h3>
             {anamnesis && !plan && (
               <p className="text-[10px] text-primary mt-1">Metas sugeridas pela anamnese</p>
             )}
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              setTargets({
-                kcal: goal.kcal,
-                protein: goal.protein,
-                carbs: goal.carbs,
-                fat: goal.fat,
-              });
-              setEditingTargets((v) => !v);
-            }}
-            className="text-xs font-semibold text-primary"
-          >
-            {editingTargets ? "Cancelar" : "Editar metas"}
-          </button>
+          <div className="flex flex-col items-end gap-2">
+            {!isTemplate && anamnesis && (
+              <button
+                type="button"
+                onClick={() => syncAnamnesis.mutate()}
+                disabled={syncAnamnesis.isPending}
+                className="inline-flex items-center gap-1 text-[11px] font-bold text-primary"
+              >
+                {syncAnamnesis.isPending ? (
+                  <Loader2 className="size-3 animate-spin" />
+                ) : (
+                  <Calculator className="size-3" />
+                )}
+                Usar metas da anamnese
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setTargets({
+                  kcal: goal.kcal,
+                  protein: goal.protein,
+                  carbs: goal.carbs,
+                  fat: goal.fat,
+                });
+                setEditingTargets((v) => !v);
+              }}
+              className="text-xs font-semibold text-primary"
+            >
+              {editingTargets ? "Cancelar" : "Editar metas"}
+            </button>
+          </div>
         </div>
+
+        {syncAnamnesis.isError && (
+          <p className="text-xs text-destructive mb-3">{getDietErrorMessage(syncAnamnesis.error)}</p>
+        )}
 
         {editingTargets ? (
           <div className="space-y-3">
@@ -213,31 +304,92 @@ export function StudentDietPanel({ alunoId, personalId }: Props) {
             </p>
           </>
         )}
+
+        {!isTemplate && plan && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setShowTemplates(true)}
+              className="inline-flex items-center gap-1 rounded-xl border border-border px-3 py-2 text-[11px] font-bold"
+            >
+              <BookOpen className="size-3.5" />
+              Aplicar modelo
+            </button>
+            <button
+              type="button"
+              onClick={() => saveAsTemplate.mutate()}
+              disabled={saveAsTemplate.isPending}
+              className="inline-flex items-center gap-1 rounded-xl border border-border px-3 py-2 text-[11px] font-bold"
+            >
+              <Copy className="size-3.5" />
+              Salvar como modelo
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Refeições — layout Dietbox */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <Apple className="size-5 text-primary" />
-          <h3 className="font-semibold">Refeições do dia</h3>
+          <h3 className="font-semibold">Refeições do plano</h3>
         </div>
 
-        {MEAL_SLOTS.map((slot) => {
+        {activationError && (
+          <p className="text-xs text-destructive rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2">
+            {activationError}
+          </p>
+        )}
+
+        {availableSlots.length > 0 && (
+          <div className="rounded-2xl border border-dashed border-border bg-card/40 p-4">
+            <p className="text-[11px] font-semibold text-foreground mb-1">
+              Selecione as refeições necessárias
+            </p>
+            <p className="text-[10px] text-muted-foreground mb-3">
+              Toque em uma refeição para abrir o preenchimento de alimentos.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {availableSlots.map((slot) => {
+                const Icon = slot.icon;
+                const busy = activatingSlot === slot.id;
+                return (
+                  <button
+                    key={slot.id}
+                    type="button"
+                    disabled={!!activatingSlot}
+                    onClick={() => handleSelectMealSlot(slot.id)}
+                    className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-[11px] font-bold text-muted-foreground hover:border-primary/40 hover:text-primary disabled:opacity-50"
+                  >
+                    {busy ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <Icon className="size-3.5" />
+                    )}
+                    {slot.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {visibleSlots.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-border p-6 text-center">
+            <p className="text-sm text-muted-foreground">Nenhuma refeição selecionada ainda.</p>
+          </div>
+        )}
+
+        {visibleSlots.map((slot) => {
           const meal = meals.find((m) => m.slot === slot.id);
           const items = meal?.diet_meal_items ?? [];
-          const mealTotals = items.reduce(
-            (a, i) => ({
-              kcal: a.kcal + Number(i.kcal ?? 0),
-              p: a.p + Number(i.protein_g ?? 0),
-              c: a.c + Number(i.carbs_g ?? 0),
-              f: a.f + Number(i.fat_g ?? 0),
-            }),
-            { kcal: 0, p: 0, c: 0, f: 0 },
-          );
+          const mealTotals = sumMealItems(items);
           const Icon = slot.icon;
+          const isEditingNotes = meal && editingMealId === meal.id;
+          const showInlineForm = addingSlot === slot.id;
+          const isActivating = activatingSlot === slot.id;
 
           return (
-            <div key={slot.id} className="rounded-2xl border border-border bg-card overflow-hidden">
+            <div key={slot.id} className="rounded-2xl border border-primary/30 bg-card overflow-hidden">
               <div className="flex items-center gap-3 p-4 border-b border-border/60">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/15 text-primary">
                   <Icon className="size-5" />
@@ -246,20 +398,92 @@ export function StudentDietPanel({ alunoId, personalId }: Props) {
                   <p className="text-sm font-bold">{slot.label}</p>
                   <p className="text-xs text-muted-foreground">
                     {meal?.time_label ?? slot.time}
-                    {items.length > 0 && ` · ${Math.round(mealTotals.kcal)} kcal`}
+                    {items.length > 0 &&
+                      (mealTotals.kcal > 0
+                        ? ` · ${Math.round(mealTotals.kcal)} kcal`
+                        : ` · ${items.length} ${items.length === 1 ? "item" : "itens"}`)}
+                    {isActivating && " · salvando…"}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setAddingSlot(slot.id)}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-primary shrink-0"
-                  aria-label={`Adicionar em ${slot.label}`}
-                >
-                  <Plus className="size-4" />
-                </button>
+                {meal && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setAddingSlot(showInlineForm ? null : slot.id)}
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-primary shrink-0"
+                      aria-label={`Adicionar em ${slot.label}`}
+                    >
+                      <Plus className="size-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeMeal.mutate(meal.id)}
+                      className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:text-destructive shrink-0"
+                      aria-label={`Remover ${slot.label}`}
+                      title="Remover refeição do plano"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  </>
+                )}
               </div>
 
-              {items.length > 0 ? (
+              {meal && (
+                <div className="px-4 py-3 border-b border-border/40 bg-background/30">
+                  {isEditingNotes ? (
+                    <div className="space-y-2">
+                      <textarea
+                        value={mealNotes[meal.id] ?? meal.description ?? ""}
+                        onChange={(e) =>
+                          setMealNotes((prev) => ({ ...prev, [meal.id]: e.target.value }))
+                        }
+                        placeholder="Observações, substituições ou orientações para esta refeição…"
+                        className="field-input min-h-[72px] text-xs"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            saveMealNotes.mutate({
+                              mealId: meal.id,
+                              description: mealNotes[meal.id] ?? "",
+                            })
+                          }
+                          className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary"
+                        >
+                          <Save className="size-3" />
+                          Salvar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingMealId(null)}
+                          className="text-[10px] text-muted-foreground"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMealNotes((prev) => ({
+                          ...prev,
+                          [meal.id]: meal.description ?? "",
+                        }));
+                        setEditingMealId(meal.id);
+                      }}
+                      className="w-full text-left text-[11px] text-muted-foreground hover:text-primary"
+                    >
+                      {meal.description?.trim()
+                        ? `Obs: ${meal.description}`
+                        : "+ Observações / substituições"}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {items.length > 0 && (
                 <>
                   <div className="divide-y divide-border">
                     {items.map((item) => (
@@ -267,14 +491,11 @@ export function StudentDietPanel({ alunoId, personalId }: Props) {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium">{item.food}</p>
                           <p className="text-xs text-muted-foreground mt-0.5">
-                            {item.quantity}
-                            {item.unit} · {Math.round(Number(item.kcal ?? 0))} kcal
+                            {formatFoodItemLine(item)}
                           </p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">
-                            P {Math.round(Number(item.protein_g ?? 0))}g · C{" "}
-                            {Math.round(Number(item.carbs_g ?? 0))}g · G{" "}
-                            {Math.round(Number(item.fat_g ?? 0))}g
-                          </p>
+                          {item.notes && (
+                            <p className="text-[10px] text-muted-foreground mt-0.5">{item.notes}</p>
+                          )}
                         </div>
                         <button
                           type="button"
@@ -289,12 +510,33 @@ export function StudentDietPanel({ alunoId, personalId }: Props) {
                   <div className="px-4 py-2 bg-background/40 border-t border-border flex justify-between text-[10px] font-bold uppercase text-muted-foreground">
                     <span>Total refeição</span>
                     <span>
-                      {Math.round(mealTotals.kcal)} kcal · P{Math.round(mealTotals.p)} · C
-                      {Math.round(mealTotals.c)} · G{Math.round(mealTotals.f)}
+                      {mealTotals.kcal > 0
+                        ? `${Math.round(mealTotals.kcal)} kcal`
+                        : `${items.length} ${items.length === 1 ? "item" : "itens"}`}
                     </span>
                   </div>
                 </>
-              ) : (
+              )}
+
+              {showInlineForm && (
+                <InlineAddFoodForm
+                  slot={slot.id}
+                  slotLabel={slot.label}
+                  alunoId={alunoId}
+                  personalId={personalId}
+                  isTemplate={isTemplate}
+                  plan={plan}
+                  anamnesisTargets={anamnesis}
+                  disabled={isActivating}
+                  onCancel={() => setAddingSlot(null)}
+                  onSaved={() => {
+                    setAddingSlot(null);
+                    invalidate();
+                  }}
+                />
+              )}
+
+              {!showInlineForm && items.length === 0 && meal && (
                 <button
                   type="button"
                   onClick={() => setAddingSlot(slot.id)}
@@ -306,23 +548,111 @@ export function StudentDietPanel({ alunoId, personalId }: Props) {
             </div>
           );
         })}
+
+        {availableSlots.length > 0 && visibleSlots.length > 0 && (
+          <p className="text-[10px] text-muted-foreground text-center">
+            Você ainda pode adicionar: {availableSlots.map((s) => s.label).join(", ")}
+          </p>
+        )}
       </div>
 
-      {addingSlot && (
-        <AddFoodModal
-          slot={addingSlot}
-          slotLabel={MEAL_SLOTS.find((s) => s.id === addingSlot)!.label}
-          alunoId={alunoId}
+      <DietSupplementsPanel
+        plan={plan}
+        personalId={personalId}
+        alunoId={alunoId}
+        isTemplate={isTemplate}
+        anamnesisTargets={anamnesis ?? undefined}
+        onInvalidate={invalidate}
+      />
+
+      {showTemplates && alunoId && plan && (
+        <ApplyTemplateModal
           personalId={personalId}
-          plan={plan}
-          anamnesisTargets={anamnesis}
-          onClose={() => setAddingSlot(null)}
-          onSaved={() => {
-            setAddingSlot(null);
+          alunoId={alunoId}
+          onClose={() => setShowTemplates(false)}
+          onApplied={() => {
+            setShowTemplates(false);
             invalidate();
           }}
         />
       )}
+    </div>
+  );
+}
+
+function ApplyTemplateModal({
+  personalId,
+  alunoId,
+  onClose,
+  onApplied,
+}: {
+  personalId: string;
+  alunoId: string;
+  onClose: () => void;
+  onApplied: () => void;
+}) {
+  const [applying, setApplying] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const { data: templates = [], isLoading } = useQuery({
+    queryKey: ["dietTemplates", personalId],
+    queryFn: () => fetchDietTemplates(personalId),
+  });
+
+  async function apply(templateId: string) {
+    setApplying(templateId);
+    setError(null);
+    try {
+      await cloneDietPlan({ sourcePlanId: templateId, targetAlunoId: alunoId });
+      onApplied();
+    } catch (err) {
+      setError(getDietErrorMessage(err));
+    } finally {
+      setApplying(null);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/60 p-4">
+      <div className="w-full max-w-md rounded-2xl bg-card border border-border shadow-2xl max-h-[80vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <h3 className="text-sm font-bold">Aplicar modelo</h3>
+          <button type="button" onClick={onClose}>
+            <X className="size-5 text-muted-foreground" />
+          </button>
+        </div>
+        <div className="p-4 space-y-2">
+          <p className="text-xs text-muted-foreground mb-2">
+            Substitui o plano atual do aluno pelo modelo selecionado.
+          </p>
+          {error && <p className="text-xs text-destructive">{error}</p>}
+          {isLoading ? (
+            <Loader2 className="size-5 animate-spin text-primary mx-auto" />
+          ) : templates.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">
+              Nenhum modelo cadastrado. Salve um plano como modelo ou crie na biblioteca.
+            </p>
+          ) : (
+            templates.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                disabled={!!applying}
+                onClick={() => void apply(t.id)}
+                className="w-full rounded-xl border border-border p-3 text-left hover:border-primary/40"
+              >
+                <p className="text-sm font-semibold">{t.name}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  {t.kcal_target} kcal · P{t.protein_g} · C{t.carbs_g} · G{t.fat_g}
+                </p>
+                {applying === t.id && (
+                  <Loader2 className="size-4 animate-spin text-primary mt-2" />
+                )}
+              </button>
+            ))
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -404,191 +734,135 @@ function TargetInput({
   );
 }
 
-function AddFoodModal({
+function InlineAddFoodForm({
   slot,
   slotLabel,
   alunoId,
   personalId,
+  isTemplate,
   plan,
   anamnesisTargets,
-  onClose,
+  disabled,
+  onCancel,
   onSaved,
 }: {
-  slot: SlotId;
+  slot: MealSlotId;
   slotLabel: string;
-  alunoId: string;
+  alunoId?: string;
   personalId: string;
-  plan: {
-    id: string;
-    kcal_target: number | null;
-    protein_g: number | null;
-    carbs_g: number | null;
-    fat_g: number | null;
-    diet_meals?: Meal[];
-  } | null;
+  isTemplate: boolean;
+  plan: DietPlan | null | undefined;
   anamnesisTargets: {
     kcal_target: number;
     protein_g: number;
     carbs_g: number;
     fat_g: number;
-  } | null;
-  onClose: () => void;
+  } | null | undefined;
+  disabled?: boolean;
+  onCancel: () => void;
   onSaved: () => void;
 }) {
   const [food, setFood] = useState("");
   const [quantity, setQuantity] = useState("100");
-  const [unit, setUnit] = useState("g");
-  const [kcal, setKcal] = useState("");
-  const [protein, setProtein] = useState("");
-  const [carbs, setCarbs] = useState("");
-  const [fat, setFat] = useState("");
+  const [itemNotes, setItemNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!food.trim()) return;
+    if (!food.trim() || disabled) return;
     setSaving(true);
+    setError(null);
 
-    let planId = plan?.id;
-    if (!planId) {
-      const { data: created, error } = await supabase
-        .from("diet_plans")
-        .insert({
-          aluno_id: alunoId,
-          personal_id: personalId,
-          name: "Plano Alimentar",
-          kcal_target: anamnesisTargets?.kcal_target ?? 2000,
-          protein_g: anamnesisTargets?.protein_g ?? 150,
-          carbs_g: anamnesisTargets?.carbs_g ?? 200,
-          fat_g: anamnesisTargets?.fat_g ?? 60,
-          is_active: true,
-        })
-        .select("id")
-        .single();
-      if (error) {
-        setSaving(false);
-        return;
-      }
-      planId = created.id;
+    try {
+      const planId = await ensureDietPlan({
+        personalId,
+        alunoId,
+        isTemplate,
+        existingPlanId: plan?.id,
+        targets: anamnesisTargets ?? undefined,
+      });
+
+      const meals = (plan?.diet_meals as DietMeal[] | undefined) ?? [];
+      const meal = await ensureDietMeal(planId, slot, meals.length + 1);
+      const itemCount = meals.find((m) => m.slot === slot)?.diet_meal_items?.length ?? 0;
+
+      const { error: itemError } = await supabase.from("diet_meal_items").insert({
+        meal_id: meal.id,
+        food: food.trim(),
+        quantity: Number(quantity) || 0,
+        unit: "g",
+        kcal: 0,
+        protein_g: 0,
+        carbs_g: 0,
+        fat_g: 0,
+        notes: itemNotes.trim() || null,
+        position: itemCount + 1,
+      });
+      if (itemError) throw itemError;
+      setFood("");
+      setQuantity("100");
+      setItemNotes("");
+      onSaved();
+    } catch (err) {
+      setError(getDietErrorMessage(err));
+    } finally {
+      setSaving(false);
     }
-
-    const meals = (plan?.diet_meals as Meal[] | undefined) ?? [];
-    let meal = meals.find((m) => m.slot === slot);
-    if (!meal) {
-      const { data: newMeal, error } = await supabase
-        .from("diet_meals")
-        .insert({
-          plan_id: planId,
-          slot,
-          position: meals.length + 1,
-          time_label: MEAL_SLOTS.find((s) => s.id === slot)?.time,
-        })
-        .select("id, slot")
-        .single();
-      if (error) {
-        setSaving(false);
-        return;
-      }
-      meal = { ...newMeal, slot, time_label: null, diet_meal_items: [] };
-    }
-
-    const { error: itemError } = await supabase.from("diet_meal_items").insert({
-      meal_id: meal!.id,
-      food: food.trim(),
-      quantity: Number(quantity) || 1,
-      unit,
-      kcal: Number(kcal) || 0,
-      protein_g: Number(protein) || 0,
-      carbs_g: Number(carbs) || 0,
-      fat_g: Number(fat) || 0,
-      position: (meal!.diet_meal_items?.length ?? 0) + 1,
-    });
-
-    setSaving(false);
-    if (itemError) return;
-    onSaved();
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div
-        className="w-full max-w-md rounded-t-3xl bg-card border-t border-border p-5 pb-8 max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-bold">Adicionar alimento</h3>
-            <p className="text-xs text-muted-foreground">{slotLabel}</p>
-          </div>
-          <button type="button" onClick={onClose} className="rounded-full bg-secondary p-1.5">
-            <X className="size-4" />
-          </button>
-        </div>
-
-        <form onSubmit={submit} className="space-y-3">
-          <Field label="Alimento">
-            <input
-              required
-              value={food}
-              onChange={(e) => setFood(e.target.value)}
-              placeholder="Ex: Arroz integral cozido"
-              className="field-input"
-              autoFocus
-            />
-          </Field>
-          <div className="grid grid-cols-2 gap-2">
-            <Field label="Quantidade">
-              <input
-                type="number"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                className="field-input"
-              />
-            </Field>
-            <Field label="Unidade">
-              <select value={unit} onChange={(e) => setUnit(e.target.value)} className="field-input">
-                <option value="g">g</option>
-                <option value="ml">ml</option>
-                <option value="un">unidade</option>
-                <option value="col">col. sopa</option>
-                <option value="xic">xícara</option>
-                <option value="fat">fatia</option>
-              </select>
-            </Field>
-          </div>
-          <Field label="Calorias (kcal)">
-            <input
-              type="number"
-              value={kcal}
-              onChange={(e) => setKcal(e.target.value)}
-              className="field-input"
-            />
-          </Field>
-          <div className="grid grid-cols-3 gap-2">
-            <Field label="Prot (g)">
-              <input
-                type="number"
-                value={protein}
-                onChange={(e) => setProtein(e.target.value)}
-                className="field-input"
-              />
-            </Field>
-            <Field label="Carb (g)">
-              <input type="number" value={carbs} onChange={(e) => setCarbs(e.target.value)} className="field-input" />
-            </Field>
-            <Field label="Gord (g)">
-              <input type="number" value={fat} onChange={(e) => setFat(e.target.value)} className="field-input" />
-            </Field>
-          </div>
+    <div className="px-4 py-4 border-t border-primary/20 bg-primary/5">
+      <p className="text-[11px] font-bold text-primary mb-3">Preencher {slotLabel}</p>
+      <form onSubmit={(e) => void submit(e)} className="space-y-3">
+        <Field label="Alimento">
+          <input
+            required
+            value={food}
+            onChange={(e) => setFood(e.target.value)}
+            placeholder="Ex.: arroz, feijão, frango grelhado"
+            className="field-input"
+            disabled={disabled || saving}
+            autoFocus
+          />
+        </Field>
+        <Field label="Quantidade (g)">
+          <input
+            type="number"
+            min={1}
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            className="field-input"
+            disabled={disabled || saving}
+          />
+        </Field>
+        <Field label="Observação (opcional)">
+          <input
+            value={itemNotes}
+            onChange={(e) => setItemNotes(e.target.value)}
+            placeholder="Ex.: sem sal, substituir por batata-doce"
+            className="field-input"
+            disabled={disabled || saving}
+          />
+        </Field>
+        {error && <p className="text-xs text-destructive">{error}</p>}
+        <div className="flex gap-2">
           <button
             type="submit"
-            disabled={!food.trim() || saving}
-            className="w-full rounded-2xl bg-gradient-primary py-3.5 font-bold text-primary-foreground disabled:opacity-50"
+            disabled={!food.trim() || saving || disabled}
+            className="flex-1 rounded-xl bg-gradient-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50"
           >
-            {saving ? "Salvando…" : "Adicionar ao plano"}
+            {saving ? "Salvando…" : "Adicionar alimento"}
           </button>
-        </form>
-      </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-xl border border-border px-3 py-2.5 text-sm text-muted-foreground"
+          >
+            Fechar
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

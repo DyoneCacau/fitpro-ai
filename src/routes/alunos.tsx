@@ -14,8 +14,14 @@ import {
 import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
 import { PageHeader } from "@/components/PageHeader";
+import { RecurrencePresetPicker } from "@/components/professional/RecurrencePresetPicker";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import {
+  APPOINTMENT_KIND_LABELS,
+  RECURRENCE_PRESETS,
+  type AppointmentKind,
+} from "@/lib/appointments";
 import { formatInviteStatus } from "@/lib/labels";
 
 export const Route = createFileRoute("/alunos")({
@@ -32,6 +38,8 @@ function AlunosPage() {
   const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
+  const [planDays, setPlanDays] = useState(RECURRENCE_PRESETS[0].days);
+  const [planKind, setPlanKind] = useState<AppointmentKind>("retorno");
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -69,6 +77,8 @@ function AlunosPage() {
       const { data, error } = await supabase.rpc("create_student_invitation", {
         _email: email.trim(),
         _full_name: fullName.trim() || null,
+        _follow_up_interval_days: planDays,
+        _follow_up_kind: planKind,
       });
       if (error) throw error;
       const row = data?.[0];
@@ -145,6 +155,29 @@ function AlunosPage() {
               placeholder="Nome do aluno (opcional)"
               className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
             />
+
+            <div className="rounded-xl border border-border bg-muted/20 p-3 space-y-3">
+              <p className="text-xs font-semibold text-foreground">Plano de acompanhamento</p>
+              <label className="block space-y-1">
+                <span className="text-[11px] text-muted-foreground">Tipo principal</span>
+                <select
+                  value={planKind}
+                  onChange={(e) => setPlanKind(e.target.value as AppointmentKind)}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value="retorno">{APPOINTMENT_KIND_LABELS.retorno}</option>
+                  <option value="avaliacao">{APPOINTMENT_KIND_LABELS.avaliacao}</option>
+                </select>
+              </label>
+              <div>
+                <span className="text-[11px] text-muted-foreground block mb-1">Periodicidade</span>
+                <RecurrencePresetPicker value={planDays} onChange={setPlanDays} />
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Será usado nos agendamentos de retorno e reavaliação deste aluno.
+              </p>
+            </div>
+
             <button
               type="button"
               disabled={!email || inviteMutation.isPending}
