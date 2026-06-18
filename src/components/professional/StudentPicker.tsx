@@ -2,8 +2,8 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronRight, Loader2, Users } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { fetchMyStudents } from "@/lib/students";
 
 const storageKey = (userId: string) => `fitpro-selected-student-${userId}`;
 
@@ -14,11 +14,7 @@ export function useSelectedStudent() {
   const { data: students = [], isLoading } = useQuery({
     queryKey: ["myStudents", user?.id],
     enabled: !!user?.id,
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_my_students");
-      if (error) throw error;
-      return data ?? [];
-    },
+    queryFn: () => fetchMyStudents(),
   });
 
   useEffect(() => {

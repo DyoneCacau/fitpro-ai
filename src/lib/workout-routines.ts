@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { fetchMyStudents } from "@/lib/students";
 
 export type RoutineLevel = "adaptacao" | "iniciante" | "intermediario" | "avancado";
 export type RoutineStatus = "scheduled" | "active" | "archived";
@@ -132,10 +133,9 @@ export async function ensureDefaultStudentRoutine(alunoId: string, personalId: s
 export type PeerRoutine = WorkoutRoutineRow & { studentName: string | null; studentId: string };
 
 export async function fetchPeerStudentRoutines(personalId: string, excludeAlunoId: string) {
-  const { data: students, error: studentsError } = await supabase.rpc("get_my_students");
-  if (studentsError) throw studentsError;
+  const students = await fetchMyStudents();
 
-  const peers = (students ?? []).filter((s: { id: string }) => s.id !== excludeAlunoId);
+  const peers = students.filter((s) => s.id !== excludeAlunoId);
   const all: PeerRoutine[] = [];
 
   for (const student of peers) {

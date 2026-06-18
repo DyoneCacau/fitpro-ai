@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarCheck, Loader2, Save } from "lucide-react";
+import { CalendarCheck, CalendarClock, Loader2, Plus, Save } from "lucide-react";
 import { AppointmentHistoryList } from "@/components/appointments/AppointmentHistoryList";
+import { QuickAppointmentModal } from "@/components/professional/QuickAppointmentModal";
 import { RecurrencePresetPicker } from "@/components/professional/RecurrencePresetPicker";
 import {
   APPOINTMENT_KIND_LABELS,
@@ -9,7 +10,9 @@ import {
   daysUntil,
   fetchStudentAppointmentHistory,
   fetchStudentFollowUp,
+  fetchStudentScheduledAppointments,
   formatAppointmentDate,
+  formatAppointmentTime,
   getRecurrenceLabel,
   updateStudentFollowUpPlan,
   type AppointmentKind,
@@ -18,15 +21,31 @@ import {
 interface Props {
   alunoId: string;
   personalId: string;
+  studentName?: string | null;
 }
 
 const FOLLOW_UP_KIND_OPTIONS: AppointmentKind[] = ["retorno", "avaliacao"];
 
-export function StudentAgendaPanel({ alunoId, personalId }: Props) {
+export function StudentAgendaPanel({ alunoId, personalId, studentName }: Props) {
   const qc = useQueryClient();
+  const [showSchedule, setShowSchedule] = useState(false);
+
+  const invalidate = () => {
+    void qc.invalidateQueries({ queryKey: ["studentFollowUp", personalId, alunoId] });
+    void qc.invalidateQueries({ queryKey: ["studentAppointmentHistory", personalId, alunoId] });
+    void qc.invalidateQueries({ queryKey: ["studentScheduledAppointments", personalId, alunoId] });
+    void qc.invalidateQueries({ queryKey: ["todayAppointments", personalId] });
+    void qc.invalidateQueries({ queryKey: ["followUpAlerts", personalId] });
+  };
+
   const { data: followUp, isLoading: loadingFollowUp } = useQuery({
     queryKey: ["studentFollowUp", personalId, alunoId],
     queryFn: () => fetchStudentFollowUp(personalId, alunoId),
+  });
+
+  const { data: scheduled = [], isLoading: loadingScheduled } = useQuery({
+    queryKey: ["studentScheduledAppointments", personalId, alunoId],
+    queryFn: () => fetchStudentScheduledAppointments(personalId, alunoId),
   });
 
   const { data: history = [], isLoading: loadingHistory } = useQuery({
@@ -49,10 +68,7 @@ export function StudentAgendaPanel({ alunoId, personalId }: Props) {
       if (!intervalDays) throw new Error("Selecione a periodicidade");
       return updateStudentFollowUpPlan(alunoId, intervalDays, kind);
     },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["studentFollowUp", personalId, alunoId] });
-      void qc.invalidateQueries({ queryKey: ["followUpAlerts", personalId] });
-    },
+    onSuccess: invalidate,
   });
 
   const isLoading = loadingFollowUp || loadingHistory;
@@ -66,8 +82,67 @@ export function StudentAgendaPanel({ alunoId, personalId }: Props) {
   const planDirty =
     followUp && (intervalDays !== followUp.interval_days || kind !== followUp.kind);
 
+  const displayName = studentName?.trim() || "Aluno";
+
   return (
     <div className="space-y-5">
+      <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold flex items-center gap-2">
+              <CalendarClock className="size-4 text-primary" />
+              Agendamentos
+            </h2>
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Os de hoje aparecem na agenda da página inicial.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowSchedule(true)}
+            className="inline-flex items-center gap-1 rounded-xl bg-primary px-3 py-2 text-[11px] font-bold text-primary-foreground shrink-0"
+          >
+            <Plus className="size-3.5" />
+            Agendar
+          </button>
+        </div>
+
+        {loadingScheduled ? (
+          <div className="flex justify-center py-4 mt-3">
+            <Loader2 className="size-5 animate-spin text-primary" />
+          </div>
+        ) : scheduled.length === 0 ? (
+          <p className="text-xs text-muted-foreground mt-3">Nenhum agendamento futuro.</p>
+        ) : (
+          <div className="mt-3 space-y-2">
+            {scheduled.map((ap) => (
+              <div
+                key={ap.id}
+                className="rounded-xl border border-border bg-card px-3 py-2 flex items-center gap-3"
+              >
+                <div className="text-center shrink-0 min-w-[52px]">
+                  <p className="text-sm font-black text-primary">
+                    {formatAppointmentTime(ap.scheduled_at)}
+                  </p>
+                  <p className="text-[9px] text-muted-foreground">
+                    {new Date(ap.scheduled_at).toLocaleDateString("pt-BR", {
+                      day: "2-digit",
+                      month: "short",
+                    })}
+                  </p>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold">{APPOINTMENT_KIND_LABELS[ap.kind]}</p>
+                  {ap.notes && (
+                    <p className="text-[10px] text-muted-foreground truncate">{ap.notes}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="rounded-2xl border border-border bg-card p-4">
         <h2 className="text-sm font-bold flex items-center gap-2">
           <CalendarCheck className="size-4 text-primary" />
@@ -176,6 +251,20 @@ export function StudentAgendaPanel({ alunoId, personalId }: Props) {
           <AppointmentHistoryList items={history} />
         )}
       </div>
+
+      {showSchedule && (
+        <QuickAppointmentModal
+          personalId={personalId}
+          students={[{ id: alunoId, full_name: displayName }]}
+          defaultAlunoId={alunoId}
+          title={`Agendar · ${displayName}`}
+          onClose={() => setShowSchedule(false)}
+          onSaved={() => {
+            invalidate();
+            setShowSchedule(false);
+          }}
+        />
+      )}
     </div>
   );
 }

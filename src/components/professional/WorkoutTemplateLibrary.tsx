@@ -4,6 +4,7 @@ import { Loader2, Plus, Search, Trash2, X } from "lucide-react";
 import { StudentWorkoutsPanel } from "@/components/professional/StudentWorkoutsPanel";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { fetchMyStudents } from "@/lib/students";
 import {
   ROUTINE_LEVEL_LABELS,
   ROUTINE_LEVEL_ORDER,
@@ -419,11 +420,7 @@ function CloneLibraryToStudentModal({
 
   const { data: students = [], isLoading } = useQuery({
     queryKey: ["myStudents"],
-    queryFn: async () => {
-      const { data, error: qError } = await supabase.rpc("get_my_students");
-      if (qError) throw qError;
-      return data ?? [];
-    },
+    queryFn: () => fetchMyStudents(),
   });
 
   async function submit(e: React.FormEvent) {

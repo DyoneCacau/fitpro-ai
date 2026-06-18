@@ -1,19 +1,9 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, Dumbbell, Apple, Users, User, GraduationCap } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { Home, Dumbbell, Apple, Users, User } from "lucide-react";
 
-const studentItems = [
+const navItems = [
   { to: "/", label: "Início", icon: Home },
-  { to: "/treinos", label: "Treinos", icon: Dumbbell },
-  { to: "/dieta", label: "Dieta", icon: Apple },
-  { to: "/feed", label: "Feed", icon: Users },
-  { to: "/perfil", label: "Perfil", icon: User },
-] as const;
-
-const professionalItems = [
-  { to: "/", label: "Início", icon: Home },
-  { to: "/alunos", label: "Alunos", icon: GraduationCap },
-  { to: "/treinos", label: "Treinos", icon: Dumbbell },
+  { to: "/treinos", label: "Treino", icon: Dumbbell },
   { to: "/dieta", label: "Dieta", icon: Apple },
   { to: "/feed", label: "Feed", icon: Users },
   { to: "/perfil", label: "Perfil", icon: User },
@@ -21,8 +11,7 @@ const professionalItems = [
 
 export function BottomNav() {
   const loc = useLocation();
-  const { role } = useAuth();
-  const items = role === "personal" || role === "admin" ? professionalItems : studentItems;
+  const items = navItems;
 
   return (
     <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-border bg-card/95 backdrop-blur-lg pb-[env(safe-area-inset-bottom)]">

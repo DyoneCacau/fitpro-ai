@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, Dumbbell, Loader2, Lock, Mail, User } from "lucide-react";
+import { AlertCircle, Calendar, Dumbbell, Loader2, Lock, Mail, Phone, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatProfessionalSpecialties } from "@/lib/professional";
 import { formatInviteStatus } from "@/lib/labels";
@@ -14,6 +14,8 @@ function AcceptInvitePage() {
   const { token } = Route.useParams();
   const navigate = useNavigate();
   const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [birthDate, setBirthDate] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -51,6 +53,27 @@ function AcceptInvitePage() {
       return;
     }
 
+    if (!fullName.trim()) {
+      setError("Informe seu nome completo.");
+      return;
+    }
+
+    if (!phone.trim()) {
+      setError("Informe seu telefone.");
+      return;
+    }
+
+    if (!birthDate) {
+      setError("Informe sua data de nascimento.");
+      return;
+    }
+
+    const birth = new Date(`${birthDate}T12:00:00`);
+    if (Number.isNaN(birth.getTime()) || birth > new Date()) {
+      setError("Data de nascimento inválida.");
+      return;
+    }
+
     setLoading(true);
     try {
       const { data: signUpData, error } = await supabase.auth.signUp({
@@ -59,7 +82,9 @@ function AcceptInvitePage() {
         options: {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
-            full_name: fullName,
+            full_name: fullName.trim(),
+            phone: phone.trim(),
+            birth_date: birthDate,
             role: "aluno",
             invitation_token: token,
           },
@@ -154,6 +179,19 @@ function AcceptInvitePage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        <Field label="Nome completo">
+          <div className="relative">
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <input
+              required
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder="Seu nome"
+            />
+          </div>
+        </Field>
+
         <Field label="E-mail">
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -165,15 +203,31 @@ function AcceptInvitePage() {
           </div>
         </Field>
 
-        <Field label="Seu nome">
+        <Field label="Telefone">
           <div className="relative">
-            <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <input
               required
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
+              type="tel"
+              inputMode="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
               className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              placeholder="Nome completo"
+              placeholder="(00) 00000-0000"
+            />
+          </div>
+        </Field>
+
+        <Field label="Data de nascimento">
+          <div className="relative">
+            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <input
+              required
+              type="date"
+              value={birthDate}
+              max={new Date().toISOString().slice(0, 10)}
+              onChange={(e) => setBirthDate(e.target.value)}
+              className="w-full rounded-lg border border-input bg-background pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
         </Field>

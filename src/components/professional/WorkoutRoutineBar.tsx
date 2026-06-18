@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchMyStudents } from "@/lib/students";
 import {
   ROUTINE_LEVEL_LABELS,
   ROUTINE_SCHEDULE_LABELS,
@@ -634,11 +635,7 @@ function CopyToOtherStudentModal({
 
   const { data: students = [], isLoading } = useQuery({
     queryKey: ["myStudents"],
-    queryFn: async () => {
-      const { data, error: qError } = await supabase.rpc("get_my_students");
-      if (qError) throw qError;
-      return data ?? [];
-    },
+    queryFn: () => fetchMyStudents(),
   });
 
   const others = students.filter((s: { id: string }) => s.id !== currentAlunoId);

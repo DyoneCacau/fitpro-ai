@@ -16,10 +16,12 @@ import { Route as NotificacoesRouteImport } from './routes/notificacoes'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FeedRouteImport } from './routes/feed'
 import { Route as DietaRouteImport } from './routes/dieta'
+import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as AvaliacoesRouteImport } from './routes/avaliacoes'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AlunosRouteImport } from './routes/alunos'
 import { Route as AgendaRouteImport } from './routes/agenda'
+import { Route as AcompanhamentoRouteImport } from './routes/acompanhamento'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TreinoIdRouteImport } from './routes/treino.$id'
 import { Route as ConviteTokenRouteImport } from './routes/convite.$token'
@@ -60,6 +62,11 @@ const DietaRoute = DietaRouteImport.update({
   path: '/dieta',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ClientesRoute = ClientesRouteImport.update({
+  id: '/clientes',
+  path: '/clientes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AvaliacoesRoute = AvaliacoesRouteImport.update({
   id: '/avaliacoes',
   path: '/avaliacoes',
@@ -78,6 +85,11 @@ const AlunosRoute = AlunosRouteImport.update({
 const AgendaRoute = AgendaRouteImport.update({
   id: '/agenda',
   path: '/agenda',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AcompanhamentoRoute = AcompanhamentoRouteImport.update({
+  id: '/acompanhamento',
+  path: '/acompanhamento',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -103,10 +115,12 @@ const AlunosAlunoIdRoute = AlunosAlunoIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/acompanhamento': typeof AcompanhamentoRoute
   '/agenda': typeof AgendaRoute
   '/alunos': typeof AlunosRouteWithChildren
   '/auth': typeof AuthRoute
   '/avaliacoes': typeof AvaliacoesRoute
+  '/clientes': typeof ClientesRoute
   '/dieta': typeof DietaRoute
   '/feed': typeof FeedRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -120,10 +134,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/acompanhamento': typeof AcompanhamentoRoute
   '/agenda': typeof AgendaRoute
   '/alunos': typeof AlunosRouteWithChildren
   '/auth': typeof AuthRoute
   '/avaliacoes': typeof AvaliacoesRoute
+  '/clientes': typeof ClientesRoute
   '/dieta': typeof DietaRoute
   '/feed': typeof FeedRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -138,10 +154,12 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/acompanhamento': typeof AcompanhamentoRoute
   '/agenda': typeof AgendaRoute
   '/alunos': typeof AlunosRouteWithChildren
   '/auth': typeof AuthRoute
   '/avaliacoes': typeof AvaliacoesRoute
+  '/clientes': typeof ClientesRoute
   '/dieta': typeof DietaRoute
   '/feed': typeof FeedRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -157,10 +175,12 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/acompanhamento'
     | '/agenda'
     | '/alunos'
     | '/auth'
     | '/avaliacoes'
+    | '/clientes'
     | '/dieta'
     | '/feed'
     | '/forgot-password'
@@ -174,10 +194,12 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/acompanhamento'
     | '/agenda'
     | '/alunos'
     | '/auth'
     | '/avaliacoes'
+    | '/clientes'
     | '/dieta'
     | '/feed'
     | '/forgot-password'
@@ -191,10 +213,12 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/acompanhamento'
     | '/agenda'
     | '/alunos'
     | '/auth'
     | '/avaliacoes'
+    | '/clientes'
     | '/dieta'
     | '/feed'
     | '/forgot-password'
@@ -209,10 +233,12 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AcompanhamentoRoute: typeof AcompanhamentoRoute
   AgendaRoute: typeof AgendaRoute
   AlunosRoute: typeof AlunosRouteWithChildren
   AuthRoute: typeof AuthRoute
   AvaliacoesRoute: typeof AvaliacoesRoute
+  ClientesRoute: typeof ClientesRoute
   DietaRoute: typeof DietaRoute
   FeedRoute: typeof FeedRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
@@ -275,6 +301,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DietaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/clientes': {
+      id: '/clientes'
+      path: '/clientes'
+      fullPath: '/clientes'
+      preLoaderRoute: typeof ClientesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/avaliacoes': {
       id: '/avaliacoes'
       path: '/avaliacoes'
@@ -301,6 +334,13 @@ declare module '@tanstack/react-router' {
       path: '/agenda'
       fullPath: '/agenda'
       preLoaderRoute: typeof AgendaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/acompanhamento': {
+      id: '/acompanhamento'
+      path: '/acompanhamento'
+      fullPath: '/acompanhamento'
+      preLoaderRoute: typeof AcompanhamentoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -347,10 +387,12 @@ const AlunosRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AcompanhamentoRoute: AcompanhamentoRoute,
   AgendaRoute: AgendaRoute,
   AlunosRoute: AlunosRouteWithChildren,
   AuthRoute: AuthRoute,
   AvaliacoesRoute: AvaliacoesRoute,
+  ClientesRoute: ClientesRoute,
   DietaRoute: DietaRoute,
   FeedRoute: FeedRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,

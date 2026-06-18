@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { CalendarClock, ClipboardList, Dumbbell, LineChart } from "lucide-react";
+import { CalendarClock, Dumbbell, Apple, Users, User } from "lucide-react";
 import { useLinkedProfessional } from "@/hooks/use-linked-professional";
 import { formatProfessionalRegistry } from "@/lib/professional";
 import { greetingForNow } from "@/lib/workout-display";
@@ -17,8 +17,8 @@ const WEEK = [
 const MENU = [
   { to: "/treinos", label: "Treinos", icon: Dumbbell },
   { to: "/agenda", label: "Agenda", icon: CalendarClock },
-  { to: "/avaliacoes", label: "Avaliações", icon: ClipboardList },
-  { to: "/avaliacoes", label: "Meu progresso", icon: LineChart },
+  { to: "/dieta", label: "Alimentação", icon: Apple },
+  { to: "/feed", label: "Feed", icon: Users },
 ] as const;
 
 export function MfitStudentHome({ studentName }: { studentName: string }) {
@@ -38,7 +38,14 @@ export function MfitStudentHome({ studentName }: { studentName: string }) {
 
   return (
     <div className="min-h-[calc(100vh-5rem)] bg-background">
-      <div className="bg-gradient-hero px-5 pt-10 pb-6 text-center">
+      <div className="bg-gradient-hero px-5 pt-10 pb-6 text-center relative">
+        <Link
+          to="/perfil"
+          className="absolute right-5 top-10 flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card/80 text-muted-foreground hover:text-primary transition-colors"
+          aria-label="Abrir perfil"
+        >
+          <User className="size-5" />
+        </Link>
         <div className="flex items-center justify-center gap-2 mb-6">
           <Dumbbell className="size-7 text-primary" strokeWidth={2.5} />
           <span className="text-lg font-black tracking-tight text-foreground">

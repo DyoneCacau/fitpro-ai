@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Calculator, Loader2, Save } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { AlertCircle, Calculator, Loader2, Save } from "lucide-react";
+import { ExportAnamnesisPdfButton } from "@/components/assessment/ExportAnamnesisPdfButton";
+import { AnamnesisComparativePreview } from "@/components/assessment/AnamnesisComparativePreview";
+import {
+  fetchStudentAnamnesis,
+  saveStudentAnamnesis,
+  type AnamnesisRow,
+} from "@/lib/anamnesis";
+import { fetchStudentAssessments } from "@/lib/tracking";
 import {
   ACTIVITY_OPTIONS,
   GOAL_OPTIONS,
@@ -14,141 +21,150 @@ import {
 interface Props {
   alunoId: string;
   personalId: string;
+  studentName?: string;
 }
 
-export function StudentAnamnesisPanel({ alunoId, personalId }: Props) {
+type FormState = {
+  sex: Sex;
+  age: string;
+  weightKg: string;
+  heightCm: string;
+  activity: ActivityLevel;
+  goal: FitnessGoal;
+  restrictions: string;
+  clinicalNotes: string;
+};
+
+const DEFAULT_FORM: FormState = {
+  sex: "M",
+  age: "28",
+  weightKg: "75",
+  heightCm: "175",
+  activity: "moderado",
+  goal: "ganho_massa",
+  restrictions: "",
+  clinicalNotes: "",
+};
+
+function formFromAnamnesis(row: AnamnesisRow): FormState {
+  return {
+    sex: row.sex as Sex,
+    age: String(row.age),
+    weightKg: String(row.weight_kg),
+    heightCm: String(row.height_cm),
+    activity: row.activity_level as ActivityLevel,
+    goal: row.goal as FitnessGoal,
+    restrictions: row.restrictions ?? "",
+    clinicalNotes: row.clinical_notes ?? "",
+  };
+}
+
+function parseForm(form: FormState) {
+  const age = Number(form.age);
+  const weightKg = Number(form.weightKg.replace(",", "."));
+  const heightCm = Number(form.heightCm.replace(",", "."));
+  if (!Number.isFinite(age) || age <= 0) return null;
+  if (!Number.isFinite(weightKg) || weightKg <= 0) return null;
+  if (!Number.isFinite(heightCm) || heightCm <= 0) return null;
+  return { age, weightKg, heightCm };
+}
+
+export function StudentAnamnesisPanel({ alunoId, studentName }: Props) {
   const qc = useQueryClient();
-  const [sex, setSex] = useState<Sex>("M");
-  const [age, setAge] = useState("28");
-  const [weightKg, setWeightKg] = useState("75");
-  const [heightCm, setHeightCm] = useState("175");
-  const [activity, setActivity] = useState<ActivityLevel>("moderado");
-  const [goal, setGoal] = useState<FitnessGoal>("ganho_massa");
-  const [restrictions, setRestrictions] = useState("");
-  const [clinicalNotes, setClinicalNotes] = useState("");
+  const [form, setForm] = useState<FormState>(DEFAULT_FORM);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const { data: existing, isLoading } = useQuery({
-    queryKey: ["anamnesis", alunoId, personalId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("anamnesis")
-        .select("*")
-        .eq("aluno_id", alunoId)
-        .eq("personal_id", personalId)
-        .eq("is_active", true)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
+    queryKey: ["anamnesis", alunoId],
+    queryFn: () => fetchStudentAnamnesis(alunoId),
+  });
+
+  const { data: assessments = [] } = useQuery({
+    queryKey: ["proAssessments", alunoId],
+    queryFn: () => fetchStudentAssessments(alunoId),
   });
 
   useEffect(() => {
-    if (!existing) return;
-    setSex(existing.sex as Sex);
-    setAge(String(existing.age));
-    setWeightKg(String(existing.weight_kg));
-    setHeightCm(String(existing.height_cm));
-    setActivity(existing.activity_level as ActivityLevel);
-    setGoal(existing.goal as FitnessGoal);
-    setRestrictions(existing.restrictions ?? "");
-    setClinicalNotes(existing.clinical_notes ?? "");
+    if (existing) setForm(formFromAnamnesis(existing));
   }, [existing]);
 
+  const parsed = useMemo(() => parseForm(form), [form]);
+
   const preview = useMemo(() => {
-    const ageNum = Number(age);
-    const weight = Number(weightKg);
-    const height = Number(heightCm);
-    if (!ageNum || !weight || !height) return null;
+    if (!parsed) return null;
     return calculateNutritionPlan({
-      sex,
-      age: ageNum,
-      weightKg: weight,
-      heightCm: height,
-      activity,
-      goal,
+      sex: form.sex,
+      age: parsed.age,
+      weightKg: parsed.weightKg,
+      heightCm: parsed.heightCm,
+      activity: form.activity,
+      goal: form.goal,
     });
-  }, [sex, age, weightKg, heightCm, activity, goal]);
+  }, [form.sex, form.activity, form.goal, parsed]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (!preview) throw new Error("Preencha os dados da anamnese.");
-
-      const payload = {
-        aluno_id: alunoId,
-        personal_id: personalId,
-        sex,
-        age: Number(age),
-        weight_kg: Number(weightKg),
-        height_cm: Number(heightCm),
-        activity_level: activity,
-        goal,
-        bmr: preview.bmr,
-        tdee: preview.tdee,
-        kcal_target: preview.kcalTarget,
-        protein_g: preview.proteinG,
-        carbs_g: preview.carbsG,
-        fat_g: preview.fatG,
-        restrictions: restrictions.trim() || null,
-        clinical_notes: clinicalNotes.trim() || null,
-        is_active: true,
-      };
-
-      if (existing?.id) {
-        const { error } = await supabase.from("anamnesis").update(payload).eq("id", existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("anamnesis").insert(payload);
-        if (error) throw error;
+      setValidationError(null);
+      if (!parsed || !preview) {
+        throw new Error("Preencha idade, peso e altura com valores válidos.");
       }
 
-      const { data: currentPlan } = await supabase
-        .from("diet_plans")
-        .select("id")
-        .eq("aluno_id", alunoId)
-        .eq("personal_id", personalId)
-        .eq("is_active", true)
-        .maybeSingle();
-
-      const planPayload = {
-        aluno_id: alunoId,
-        personal_id: personalId,
-        name: "Plano Alimentar",
-        kcal_target: preview.kcalTarget,
-        protein_g: preview.proteinG,
-        carbs_g: preview.carbsG,
-        fat_g: preview.fatG,
-        is_active: true,
-      };
-
-      if (currentPlan?.id) {
-        await supabase.from("diet_plans").update(planPayload).eq("id", currentPlan.id);
-      } else {
-        await supabase.from("diet_plans").insert(planPayload);
-      }
+      await saveStudentAnamnesis({
+        alunoId,
+        sex: form.sex,
+        age: parsed.age,
+        weightKg: parsed.weightKg,
+        heightCm: parsed.heightCm,
+        activity: form.activity,
+        goal: form.goal,
+        restrictions: form.restrictions,
+        clinicalNotes: form.clinicalNotes,
+        nutrition: preview,
+      });
     },
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["anamnesis", alunoId, personalId] });
+      setValidationError(null);
+      void qc.invalidateQueries({ queryKey: ["anamnesis", alunoId] });
+      void qc.invalidateQueries({ queryKey: ["anamnesisContext", alunoId] });
       void qc.invalidateQueries({ queryKey: ["studentDietPlan", alunoId] });
     },
+    onError: (err: Error) => setValidationError(err.message),
   });
+
+  function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    setValidationError(null);
+  }
 
   if (isLoading) {
     return <Loader2 className="size-6 animate-spin text-primary mx-auto mt-8" />;
   }
 
+  const saveError = validationError ?? (saveMutation.error instanceof Error ? saveMutation.error.message : null);
+
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-border bg-card p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <Calculator className="size-5 text-primary" />
-          <h3 className="font-semibold">Anamnese e calculadora</h3>
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <Calculator className="size-5 text-primary" />
+            <h3 className="font-semibold">Anamnese e calculadora</h3>
+          </div>
+          <ExportAnamnesisPdfButton
+            anamnesis={existing}
+            assessments={assessments}
+            studentName={studentName}
+            sex={form.sex}
+            age={parsed?.age}
+            label="Exportar PDF"
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Sexo">
             <select
-              value={sex}
-              onChange={(e) => setSex(e.target.value as Sex)}
+              value={form.sex}
+              onChange={(e) => updateField("sex", e.target.value as Sex)}
               className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
             >
               <option value="M">Masculino</option>
@@ -156,44 +172,63 @@ export function StudentAnamnesisPanel({ alunoId, personalId }: Props) {
             </select>
           </Field>
           <Field label="Idade">
-            <input type="number" value={age} onChange={(e) => setAge(e.target.value)} className="field-input" />
+            <input
+              type="number"
+              value={form.age}
+              onChange={(e) => updateField("age", e.target.value)}
+              className="field-input"
+            />
           </Field>
           <Field label="Peso (kg)">
-            <input type="number" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} className="field-input" />
+            <input
+              type="number"
+              value={form.weightKg}
+              onChange={(e) => updateField("weightKg", e.target.value)}
+              className="field-input"
+            />
           </Field>
           <Field label="Altura (cm)">
-            <input type="number" value={heightCm} onChange={(e) => setHeightCm(e.target.value)} className="field-input" />
+            <input
+              type="number"
+              value={form.heightCm}
+              onChange={(e) => updateField("heightCm", e.target.value)}
+              className="field-input"
+            />
           </Field>
         </div>
 
         <Field label="Nível de atividade">
           <select
-            value={activity}
-            onChange={(e) => setActivity(e.target.value as ActivityLevel)}
+            value={form.activity}
+            onChange={(e) => updateField("activity", e.target.value as ActivityLevel)}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm mt-1"
           >
             {ACTIVITY_OPTIONS.map((o) => (
-              <option key={o.id} value={o.id}>{o.label}</option>
+              <option key={o.id} value={o.id}>
+                {o.label}
+              </option>
             ))}
           </select>
         </Field>
 
         <Field label="Objetivo">
           <select
-            value={goal}
-            onChange={(e) => setGoal(e.target.value as FitnessGoal)}
+            value={form.goal}
+            onChange={(e) => updateField("goal", e.target.value as FitnessGoal)}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm mt-1"
           >
             {GOAL_OPTIONS.map((o) => (
-              <option key={o.id} value={o.id}>{o.label}</option>
+              <option key={o.id} value={o.id}>
+                {o.label}
+              </option>
             ))}
           </select>
         </Field>
 
         <Field label="Restrições alimentares">
           <textarea
-            value={restrictions}
-            onChange={(e) => setRestrictions(e.target.value)}
+            value={form.restrictions}
+            onChange={(e) => updateField("restrictions", e.target.value)}
             rows={2}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm mt-1"
             placeholder="Alergias, intolerâncias..."
@@ -202,8 +237,8 @@ export function StudentAnamnesisPanel({ alunoId, personalId }: Props) {
 
         <Field label="Observações clínicas">
           <textarea
-            value={clinicalNotes}
-            onChange={(e) => setClinicalNotes(e.target.value)}
+            value={form.clinicalNotes}
+            onChange={(e) => updateField("clinicalNotes", e.target.value)}
             rows={2}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm mt-1"
             placeholder="Lesões, medicamentos, histórico..."
@@ -222,26 +257,53 @@ export function StudentAnamnesisPanel({ alunoId, personalId }: Props) {
         </div>
       )}
 
+      {saveError && (
+        <div className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          <AlertCircle className="size-4 mt-0.5 shrink-0" />
+          <span>{saveError}</span>
+        </div>
+      )}
+
       <button
         type="button"
-        disabled={!preview || saveMutation.isPending}
+        disabled={saveMutation.isPending}
         onClick={() => saveMutation.mutate()}
         className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground py-3 font-semibold disabled:opacity-50"
       >
         {saveMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
         Salvar anamnese e aplicar ao plano alimentar
       </button>
+
+      {existing && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold">Exame físico comparativo</h3>
+          <AnamnesisComparativePreview
+            anamnesis={existing}
+            assessments={assessments}
+            studentName={studentName}
+            sex={form.sex}
+            age={parsed?.age ?? existing.age}
+          />
+        </div>
+      )}
     </div>
   );
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div className="mt-3">{label && <label className="text-xs font-medium text-muted-foreground">{label}</label>}{children}</div>;
+  return (
+    <div className="mt-3">
+      {label && <label className="text-xs font-medium text-muted-foreground">{label}</label>}
+      {children}
+    </div>
+  );
 }
 
 function Stat({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className={`rounded-xl p-3 ${highlight ? "bg-primary/15 border border-primary/30" : "bg-background/60 border border-border"}`}>
+    <div
+      className={`rounded-xl p-3 ${highlight ? "bg-primary/15 border border-primary/30" : "bg-background/60 border border-border"}`}
+    >
       <p className="text-[10px] uppercase text-muted-foreground">{label}</p>
       <p className="font-bold mt-0.5">{value}</p>
     </div>

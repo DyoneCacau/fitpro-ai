@@ -2,17 +2,21 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Apple,
-  BookOpen,
   Calculator,
-  Copy,
+  ChevronDown,
   Loader2,
   Plus,
   Save,
   Trash2,
   X,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { DietSupplementsPanel } from "@/components/professional/DietSupplementsPanel";
+import { supabase } from "@/integrations/supabase/client";
+import { fetchStudentAnamnesis } from "@/lib/anamnesis";
+import { DietSubstitutionsPanel } from "@/components/professional/DietSubstitutionsPanel";
+import { FoodItemFormFields } from "@/components/diet/FoodItemFormFields";
+import { DietPlanToolbar } from "@/components/diet/DietPlanToolbar";
+import { DietMealSubstitutionsEditor } from "@/components/professional/DietMealSubstitutionsEditor";
 import {
   MEAL_SLOTS,
   activateDietMealSlot,
@@ -20,15 +24,19 @@ import {
   fetchDietPlanById,
   fetchDietTemplates,
   fetchStudentDietPlan,
+  formatFoodItemDietbox,
   formatFoodItemLine,
   ensureDietMeal,
   ensureDietPlan,
   getDietErrorMessage,
+  getMealMainItems,
   removeDietMeal,
   sumMealItems,
   sumPlanMeals,
   syncDietFromAnamnesis,
   updateMealDescription,
+  defaultQuantityForUnit,
+  type FoodUnitId,
   type DietMeal,
   type DietPlan,
   type MealSlotId,
@@ -45,6 +53,7 @@ export function StudentDietPanel({ alunoId, templatePlanId, personalId }: Props)
   const isTemplate = !!templatePlanId;
   const [addingSlot, setAddingSlot] = useState<MealSlotId | null>(null);
   const [openedSlots, setOpenedSlots] = useState<Set<MealSlotId>>(new Set());
+  const [expandedMealSlots, setExpandedMealSlots] = useState<Set<MealSlotId>>(new Set());
   const [activatingSlot, setActivatingSlot] = useState<MealSlotId | null>(null);
   const [activationError, setActivationError] = useState<string | null>(null);
   const [editingTargets, setEditingTargets] = useState(false);
@@ -58,18 +67,9 @@ export function StudentDietPanel({ alunoId, templatePlanId, personalId }: Props)
     : ["studentDietPlan", alunoId];
 
   const { data: anamnesis } = useQuery({
-    queryKey: ["anamnesis", alunoId, personalId],
+    queryKey: ["anamnesis", alunoId],
     enabled: !!alunoId && !isTemplate,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("anamnesis")
-        .select("kcal_target, protein_g, carbs_g, fat_g")
-        .eq("aluno_id", alunoId!)
-        .eq("personal_id", personalId)
-        .eq("is_active", true)
-        .maybeSingle();
-      return data;
-    },
+    queryFn: () => fetchStudentAnamnesis(alunoId!),
   });
 
   const { data: plan, isLoading } = useQuery({
@@ -181,15 +181,30 @@ export function StudentDietPanel({ alunoId, templatePlanId, personalId }: Props)
           next.delete(removed.slot);
           return next;
         });
+        setExpandedMealSlots((prev) => {
+          const next = new Set(prev);
+          next.delete(removed.slot);
+          return next;
+        });
         if (addingSlot === removed.slot) setAddingSlot(null);
       }
       invalidate();
     },
   });
 
+  function toggleMealExpanded(slot: MealSlotId) {
+    setExpandedMealSlots((prev) => {
+      const next = new Set(prev);
+      if (next.has(slot)) next.delete(slot);
+      else next.add(slot);
+      return next;
+    });
+  }
+
   function handleSelectMealSlot(slot: MealSlotId) {
     setActivationError(null);
     setOpenedSlots((prev) => new Set(prev).add(slot));
+    setExpandedMealSlots((prev) => new Set(prev).add(slot));
     setAddingSlot(slot);
 
     void (async () => {
@@ -305,26 +320,14 @@ export function StudentDietPanel({ alunoId, templatePlanId, personalId }: Props)
           </>
         )}
 
-        {!isTemplate && plan && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setShowTemplates(true)}
-              className="inline-flex items-center gap-1 rounded-xl border border-border px-3 py-2 text-[11px] font-bold"
-            >
-              <BookOpen className="size-3.5" />
-              Aplicar modelo
-            </button>
-            <button
-              type="button"
-              onClick={() => saveAsTemplate.mutate()}
-              disabled={saveAsTemplate.isPending}
-              className="inline-flex items-center gap-1 rounded-xl border border-border px-3 py-2 text-[11px] font-bold"
-            >
-              <Copy className="size-3.5" />
-              Salvar como modelo
-            </button>
-          </div>
+        {plan && (
+          <DietPlanToolbar
+            plan={plan}
+            onApplyTemplate={() => setShowTemplates(true)}
+            onSaveTemplate={() => saveAsTemplate.mutate()}
+            savingTemplate={saveAsTemplate.isPending}
+            showApplyTemplate={!isTemplate}
+          />
         )}
       </div>
 
@@ -381,35 +384,53 @@ export function StudentDietPanel({ alunoId, templatePlanId, personalId }: Props)
 
         {visibleSlots.map((slot) => {
           const meal = meals.find((m) => m.slot === slot.id);
-          const items = meal?.diet_meal_items ?? [];
+          const items = meal ? getMealMainItems(meal) : [];
           const mealTotals = sumMealItems(items);
           const Icon = slot.icon;
           const isEditingNotes = meal && editingMealId === meal.id;
           const showInlineForm = addingSlot === slot.id;
           const isActivating = activatingSlot === slot.id;
+          const isExpanded =
+            expandedMealSlots.has(slot.id) || showInlineForm || isActivating;
 
           return (
             <div key={slot.id} className="rounded-2xl border border-primary/30 bg-card overflow-hidden">
-              <div className="flex items-center gap-3 p-4 border-b border-border/60">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/15 text-primary">
-                  <Icon className="size-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold">{slot.label}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {meal?.time_label ?? slot.time}
-                    {items.length > 0 &&
-                      (mealTotals.kcal > 0
-                        ? ` · ${Math.round(mealTotals.kcal)} kcal`
-                        : ` · ${items.length} ${items.length === 1 ? "item" : "itens"}`)}
-                    {isActivating && " · salvando…"}
-                  </p>
-                </div>
+              <div
+                className={`flex items-center gap-2 p-4 ${isExpanded ? "border-b border-border/60" : ""}`}
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleMealExpanded(slot.id)}
+                  className="flex flex-1 items-center gap-3 min-w-0 text-left"
+                >
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/15 text-primary shrink-0">
+                    <Icon className="size-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold">{slot.label}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {meal?.time_label ?? slot.time}
+                      {items.length > 0 &&
+                        (mealTotals.kcal > 0
+                          ? ` · ${Math.round(mealTotals.kcal)} kcal`
+                          : ` · ${items.length} ${items.length === 1 ? "item" : "itens"}`)}
+                      {isActivating && " · salvando…"}
+                    </p>
+                  </div>
+                  <ChevronDown
+                    className={`size-4 text-muted-foreground shrink-0 transition-transform ${
+                      isExpanded ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
                 {meal && (
                   <>
                     <button
                       type="button"
-                      onClick={() => setAddingSlot(showInlineForm ? null : slot.id)}
+                      onClick={() => {
+                        setExpandedMealSlots((prev) => new Set(prev).add(slot.id));
+                        setAddingSlot(showInlineForm ? null : slot.id);
+                      }}
                       className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-primary shrink-0"
                       aria-label={`Adicionar em ${slot.label}`}
                     >
@@ -428,7 +449,7 @@ export function StudentDietPanel({ alunoId, templatePlanId, personalId }: Props)
                 )}
               </div>
 
-              {meal && (
+              {isExpanded && meal && (
                 <div className="px-4 py-3 border-b border-border/40 bg-background/30">
                   {isEditingNotes ? (
                     <div className="space-y-2">
@@ -437,7 +458,7 @@ export function StudentDietPanel({ alunoId, templatePlanId, personalId }: Props)
                         onChange={(e) =>
                           setMealNotes((prev) => ({ ...prev, [meal.id]: e.target.value }))
                         }
-                        placeholder="Observações, substituições ou orientações para esta refeição…"
+                        placeholder={"Observações (uma por linha):\n- Pode substituir a banana por 1 fatia de pão\n- Café com adoçante ou puro"}
                         className="field-input min-h-[72px] text-xs"
                       />
                       <div className="flex gap-2">
@@ -483,42 +504,83 @@ export function StudentDietPanel({ alunoId, templatePlanId, personalId }: Props)
                 </div>
               )}
 
-              {items.length > 0 && (
+              {isExpanded && meal && (
                 <>
-                  <div className="divide-y divide-border">
-                    {items.map((item) => (
-                      <div key={item.id} className="flex items-start gap-3 px-4 py-3">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium">{item.food}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {formatFoodItemLine(item)}
-                          </p>
-                          {item.notes && (
-                            <p className="text-[10px] text-muted-foreground mt-0.5">{item.notes}</p>
-                          )}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => deleteItem.mutate(item.id)}
-                          className="text-muted-foreground hover:text-destructive p-1"
-                        >
-                          <Trash2 className="size-4" />
-                        </button>
+                  {items.length > 0 && (
+                    <>
+                      <div className="divide-y divide-border">
+                        {items.map((item) => (
+                          <div key={item.id} className="flex items-start gap-3 px-4 py-3">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium">{item.food}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {formatFoodItemDietbox(item)}
+                              </p>
+                              {item.notes && (
+                                <p className="text-[10px] text-muted-foreground mt-0.5">{item.notes}</p>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => deleteItem.mutate(item.id)}
+                              className="text-muted-foreground hover:text-destructive p-1"
+                            >
+                              <Trash2 className="size-4" />
+                            </button>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                  <div className="px-4 py-2 bg-background/40 border-t border-border flex justify-between text-[10px] font-bold uppercase text-muted-foreground">
-                    <span>Total refeição</span>
-                    <span>
-                      {mealTotals.kcal > 0
-                        ? `${Math.round(mealTotals.kcal)} kcal`
-                        : `${items.length} ${items.length === 1 ? "item" : "itens"}`}
-                    </span>
-                  </div>
+                      <div className="px-4 py-2 bg-background/40 border-t border-border flex justify-between text-[10px] font-bold uppercase text-muted-foreground">
+                        <span>Total refeição</span>
+                        <span>
+                          {mealTotals.kcal > 0
+                            ? `${Math.round(mealTotals.kcal)} kcal`
+                            : `${items.length} ${items.length === 1 ? "item" : "itens"}`}
+                        </span>
+                      </div>
+                    </>
+                  )}
+
+                  <DietMealSubstitutionsEditor meal={meal} onInvalidate={invalidate} />
+
+                  {showInlineForm && (
+                    <InlineAddFoodForm
+                      slot={slot.id}
+                      slotLabel={slot.label}
+                      alunoId={alunoId}
+                      personalId={personalId}
+                      isTemplate={isTemplate}
+                      plan={plan}
+                      anamnesisTargets={anamnesis}
+                      disabled={isActivating}
+                      onCancel={() => setAddingSlot(null)}
+                      onSaved={() => invalidate()}
+                    />
+                  )}
+
+                  {!showInlineForm && items.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setAddingSlot(slot.id)}
+                      className="w-full py-3 text-xs font-semibold text-primary hover:bg-primary/5 border-t border-border transition-colors"
+                    >
+                      + Adicionar outro alimento
+                    </button>
+                  )}
+
+                  {!showInlineForm && items.length === 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setAddingSlot(slot.id)}
+                      className="w-full py-4 text-xs font-semibold text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                    >
+                      + Adicionar alimentos
+                    </button>
+                  )}
                 </>
               )}
 
-              {showInlineForm && (
+              {isExpanded && !meal && showInlineForm && (
                 <InlineAddFoodForm
                   slot={slot.id}
                   slotLabel={slot.label}
@@ -529,21 +591,8 @@ export function StudentDietPanel({ alunoId, templatePlanId, personalId }: Props)
                   anamnesisTargets={anamnesis}
                   disabled={isActivating}
                   onCancel={() => setAddingSlot(null)}
-                  onSaved={() => {
-                    setAddingSlot(null);
-                    invalidate();
-                  }}
+                  onSaved={() => invalidate()}
                 />
-              )}
-
-              {!showInlineForm && items.length === 0 && meal && (
-                <button
-                  type="button"
-                  onClick={() => setAddingSlot(slot.id)}
-                  className="w-full py-4 text-xs font-semibold text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
-                >
-                  + Adicionar alimentos
-                </button>
               )}
             </div>
           );
@@ -557,6 +606,15 @@ export function StudentDietPanel({ alunoId, templatePlanId, personalId }: Props)
       </div>
 
       <DietSupplementsPanel
+        plan={plan}
+        personalId={personalId}
+        alunoId={alunoId}
+        isTemplate={isTemplate}
+        anamnesisTargets={anamnesis ?? undefined}
+        onInvalidate={invalidate}
+      />
+
+      <DietSubstitutionsPanel
         plan={plan}
         personalId={personalId}
         alunoId={alunoId}
@@ -764,9 +822,11 @@ function InlineAddFoodForm({
 }) {
   const [food, setFood] = useState("");
   const [quantity, setQuantity] = useState("100");
+  const [unit, setUnit] = useState<FoodUnitId>("g");
   const [itemNotes, setItemNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [addedInSession, setAddedInSession] = useState(0);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -785,24 +845,31 @@ function InlineAddFoodForm({
 
       const meals = (plan?.diet_meals as DietMeal[] | undefined) ?? [];
       const meal = await ensureDietMeal(planId, slot, meals.length + 1);
-      const itemCount = meals.find((m) => m.slot === slot)?.diet_meal_items?.length ?? 0;
+
+      const { count } = await supabase
+        .from("diet_meal_items")
+        .select("*", { count: "exact", head: true })
+        .eq("meal_id", meal.id)
+        .is("substitution_set_id", null);
 
       const { error: itemError } = await supabase.from("diet_meal_items").insert({
         meal_id: meal.id,
         food: food.trim(),
         quantity: Number(quantity) || 0,
-        unit: "g",
+        unit,
         kcal: 0,
         protein_g: 0,
         carbs_g: 0,
         fat_g: 0,
         notes: itemNotes.trim() || null,
-        position: itemCount + 1,
+        position: (count ?? 0) + 1,
+        substitution_set_id: null,
       });
       if (itemError) throw itemError;
       setFood("");
-      setQuantity("100");
+      setQuantity(defaultQuantityForUnit(unit));
       setItemNotes("");
+      setAddedInSession((n) => n + 1);
       onSaved();
     } catch (err) {
       setError(getDietErrorMessage(err));
@@ -813,46 +880,36 @@ function InlineAddFoodForm({
 
   return (
     <div className="px-4 py-4 border-t border-primary/20 bg-primary/5">
-      <p className="text-[11px] font-bold text-primary mb-3">Preencher {slotLabel}</p>
+      <p className="text-[11px] font-bold text-primary mb-1">Preencher {slotLabel}</p>
+      <p className="text-[10px] text-muted-foreground mb-3">
+        Adicione todos os alimentos da refeição (ex.: pão, ovo, requeijão, mamão). Toque em Fechar quando terminar.
+      </p>
       <form onSubmit={(e) => void submit(e)} className="space-y-3">
-        <Field label="Alimento">
-          <input
-            required
-            value={food}
-            onChange={(e) => setFood(e.target.value)}
-            placeholder="Ex.: arroz, feijão, frango grelhado"
-            className="field-input"
-            disabled={disabled || saving}
-            autoFocus
-          />
-        </Field>
-        <Field label="Quantidade (g)">
-          <input
-            type="number"
-            min={1}
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            className="field-input"
-            disabled={disabled || saving}
-          />
-        </Field>
-        <Field label="Observação (opcional)">
-          <input
-            value={itemNotes}
-            onChange={(e) => setItemNotes(e.target.value)}
-            placeholder="Ex.: sem sal, substituir por batata-doce"
-            className="field-input"
-            disabled={disabled || saving}
-          />
-        </Field>
+        <FoodItemFormFields
+          food={food}
+          quantity={quantity}
+          unit={unit}
+          itemNotes={itemNotes}
+          onFoodChange={setFood}
+          onQuantityChange={setQuantity}
+          onUnitChange={setUnit}
+          onNotesChange={setItemNotes}
+          disabled={disabled || saving}
+          foodPlaceholder="Ex.: pão integral, ovo, requeijão, mamão"
+        />
         {error && <p className="text-xs text-destructive">{error}</p>}
+        {addedInSession > 0 && (
+          <p className="text-[10px] font-semibold text-primary">
+            {addedInSession} {addedInSession === 1 ? "alimento adicionado" : "alimentos adicionados"} nesta refeição
+          </p>
+        )}
         <div className="flex gap-2">
           <button
             type="submit"
             disabled={!food.trim() || saving || disabled}
             className="flex-1 rounded-xl bg-gradient-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50"
           >
-            {saving ? "Salvando…" : "Adicionar alimento"}
+            {saving ? "Salvando…" : addedInSession > 0 ? "Adicionar outro" : "Adicionar alimento"}
           </button>
           <button
             type="button"
@@ -863,15 +920,6 @@ function InlineAddFoodForm({
           </button>
         </div>
       </form>
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</label>
-      <div className="mt-1">{children}</div>
     </div>
   );
 }

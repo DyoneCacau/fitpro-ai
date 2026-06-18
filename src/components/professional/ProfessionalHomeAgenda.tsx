@@ -2,24 +2,19 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { AlertTriangle, CalendarClock, Check, ChevronRight, Loader2, Plus, X } from "lucide-react";
+import { QuickAppointmentModal, type StudentOption } from "@/components/professional/QuickAppointmentModal";
 import {
   APPOINTMENT_KIND_LABELS,
   cancelAppointment,
   completeAppointment,
-  createAppointment,
   fetchFollowUpAlerts,
-  fetchStudentFollowUp,
   formatAlertMessage,
   formatRecurrenceInfo,
-  getAppointmentErrorMessage,
-  getRecurrenceLabel,
   fetchTodayAppointments,
   formatAppointmentTime,
   type AppointmentKind,
   type StudentAppointment,
 } from "@/lib/appointments";
-
-type StudentOption = { id: string; full_name: string | null };
 
 export function ProfessionalHomeAgenda({
   personalId,
@@ -43,7 +38,7 @@ export function ProfessionalHomeAgenda({
     void qc.invalidateQueries({ queryKey: ["followUpAlerts", personalId] });
     void qc.invalidateQueries({ queryKey: ["studentAppointmentHistory"] });
     void qc.invalidateQueries({ queryKey: ["studentFollowUp"] });
-    void qc.invalidateQueries({ queryKey: ["myAppointmentHistory"] });
+    void qc.invalidateQueries({ queryKey: ["studentScheduledAppointments"] });
   };
 
   const { data: today = [], isLoading } = useQuery({
@@ -261,147 +256,6 @@ function AppointmentRow({
         >
           <X className="size-4" />
         </button>
-      </div>
-    </div>
-  );
-}
-
-function QuickAppointmentModal({
-  personalId,
-  students,
-  onClose,
-  onSaved,
-}: {
-  personalId: string;
-  students: StudentOption[];
-  onClose: () => void;
-  onSaved: () => void;
-}) {
-  const defaultTime = () => {
-    const d = new Date();
-    d.setMinutes(0, 0, 0);
-    d.setHours(d.getHours() + 1);
-    return d.toISOString().slice(0, 16);
-  };
-
-  const [alunoId, setAlunoId] = useState(students[0]?.id ?? "");
-  const [scheduledAt, setScheduledAt] = useState(defaultTime);
-  const [kind, setKind] = useState<AppointmentKind>("treino");
-  const [notes, setNotes] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const usesPlan = kind === "retorno" || kind === "avaliacao";
-
-  const { data: studentPlan } = useQuery({
-    queryKey: ["studentFollowUp", personalId, alunoId],
-    queryFn: () => fetchStudentFollowUp(personalId, alunoId),
-    enabled: !!alunoId && usesPlan,
-  });
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!alunoId) return;
-    setSaving(true);
-    setError(null);
-    try {
-      await createAppointment({
-        personal_id: personalId,
-        aluno_id: alunoId,
-        scheduled_at: new Date(scheduledAt).toISOString(),
-        kind,
-        notes,
-      });
-      onSaved();
-    } catch (err) {
-      setError(getAppointmentErrorMessage(err));
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-card border border-border shadow-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border sticky top-0 bg-card">
-          <h3 className="text-sm font-bold">Novo agendamento</h3>
-          <button type="button" onClick={onClose} className="p-1 text-muted-foreground">
-            <X className="size-5" />
-          </button>
-        </div>
-        <form onSubmit={(e) => void submit(e)} className="p-4 space-y-3">
-          <label className="block space-y-1">
-            <span className="text-[11px] font-semibold text-muted-foreground">Aluno</span>
-            <select
-              value={alunoId}
-              onChange={(e) => setAlunoId(e.target.value)}
-              className="field-input"
-              required
-            >
-              {students.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.full_name?.trim() || "Aluno"}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block space-y-1">
-            <span className="text-[11px] font-semibold text-muted-foreground">Data e hora</span>
-            <input
-              type="datetime-local"
-              value={scheduledAt}
-              onChange={(e) => setScheduledAt(e.target.value)}
-              className="field-input"
-              required
-            />
-          </label>
-          <label className="block space-y-1">
-            <span className="text-[11px] font-semibold text-muted-foreground">Tipo</span>
-            <select
-              value={kind}
-              onChange={(e) => setKind(e.target.value as AppointmentKind)}
-              className="field-input"
-            >
-              {Object.entries(APPOINTMENT_KIND_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
-                </option>
-              ))}
-            </select>
-          </label>
-          {usesPlan && (
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
-              <p className="text-[11px] font-semibold text-foreground">Plano do aluno</p>
-              {studentPlan ? (
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  {APPOINTMENT_KIND_LABELS[studentPlan.kind]} ·{" "}
-                  {getRecurrenceLabel(studentPlan.interval_days)}
-                </p>
-              ) : (
-                <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
-                  Plano não definido. Configure na aba Agenda do aluno ou no convite.
-                </p>
-              )}
-            </div>
-          )}
-          <label className="block space-y-1">
-            <span className="text-[11px] font-semibold text-muted-foreground">Observação</span>
-            <input
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="field-input"
-              placeholder="Opcional"
-            />
-          </label>
-          {error && <p className="text-xs text-destructive">{error}</p>}
-          <button
-            type="submit"
-            disabled={saving || !alunoId || (usesPlan && !studentPlan)}
-            className="w-full rounded-2xl bg-gradient-primary py-3 font-bold text-primary-foreground disabled:opacity-50"
-          >
-            {saving ? "Salvando…" : "Salvar agendamento"}
-          </button>
-        </form>
       </div>
     </div>
   );

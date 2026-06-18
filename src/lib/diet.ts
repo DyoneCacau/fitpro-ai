@@ -37,6 +37,14 @@ export type DietMealItem = {
   fat_g: number | null;
   notes: string | null;
   position: number | null;
+  substitution_set_id?: string | null;
+};
+
+export type DietMealSubstitutionSet = {
+  id: string;
+  meal_id: string;
+  name: string;
+  position: number;
 };
 
 export type DietMeal = {
@@ -45,6 +53,7 @@ export type DietMeal = {
   time_label: string | null;
   description: string | null;
   diet_meal_items: DietMealItem[];
+  diet_meal_substitution_sets?: DietMealSubstitutionSet[];
 };
 
 export type DietSupplement = {
@@ -68,7 +77,16 @@ export const SUPPLEMENT_TIMING_SUGGESTIONS = [
 ] as const;
 
 export const DIET_PLAN_SELECT =
-  "*, diet_meals(*, diet_meal_items(*)), diet_supplements(*)";
+  "*, diet_meals(*, diet_meal_items(*), diet_meal_substitution_sets(*)), diet_supplements(*), diet_substitutions(*)";
+
+export type DietSubstitution = {
+  id: string;
+  plan_id: string;
+  original_food: string;
+  substitute_food: string;
+  notes: string | null;
+  position: number;
+};
 
 export type DietPlan = {
   id: string;
@@ -84,18 +102,80 @@ export type DietPlan = {
   is_template: boolean;
   diet_meals?: DietMeal[];
   diet_supplements?: DietSupplement[];
+  diet_substitutions?: DietSubstitution[];
 };
 
-export function formatFoodQuantity(quantity: number): string {
-  const value = Number(quantity);
-  if (!Number.isFinite(value)) return "0g";
-  return `${value % 1 === 0 ? value : value.toFixed(1)}g`;
+export type FoodUnitId = "g" | "un" | "fatia" | "col_sob" | "ml" | "un_md";
+
+export const FOOD_UNIT_OPTIONS: {
+  id: FoodUnitId;
+  label: string;
+  dietboxLabel: string;
+  quantityHint: string;
+}[] = [
+  { id: "g", label: "Gramas (g)", dietboxLabel: "Grama", quantityHint: "Quantidade (g)" },
+  { id: "un", label: "Unidade", dietboxLabel: "Unidade", quantityHint: "Quantidade (un)" },
+  { id: "fatia", label: "Fatia", dietboxLabel: "Fatia", quantityHint: "Quantidade (fatias)" },
+  { id: "col_sob", label: "Colher sob.", dietboxLabel: "Colher De Sobremesa", quantityHint: "Quantidade (colheres)" },
+  { id: "ml", label: "Mililitro (ml)", dietboxLabel: "Mililitro", quantityHint: "Quantidade (ml)" },
+  { id: "un_md", label: "Un. média", dietboxLabel: "Unidade média (75g)", quantityHint: "Quantidade (un)" },
+];
+
+export function getFoodUnitMeta(unit: string) {
+  return FOOD_UNIT_OPTIONS.find((o) => o.id === unit) ?? FOOD_UNIT_OPTIONS[0];
 }
 
-export function formatFoodItemLine(item: Pick<DietMealItem, "quantity" | "kcal">): string {
-  const qty = formatFoodQuantity(item.quantity);
+export function formatFoodQuantity(quantity: number, unit: FoodUnitId | string = "g"): string {
+  const value = Number(quantity);
+  const meta = getFoodUnitMeta(unit);
+  if (!Number.isFinite(value)) {
+    return unit === "g" ? "0g" : `0 ${meta.label.toLowerCase()}`;
+  }
+  const formatted = value % 1 === 0 ? String(value) : value.toFixed(1);
+  if (unit === "g") return `${formatted}g`;
+  if (unit === "un" || unit === "un_md") {
+    return `${formatted} ${value === 1 ? "unidade" : "unidades"}`;
+  }
+  if (unit === "fatia") return `${formatted} ${value === 1 ? "fatia" : "fatias"}`;
+  if (unit === "col_sob") return `${formatted} ${value === 1 ? "colher" : "colheres"}`;
+  if (unit === "ml") return `${formatted}ml`;
+  return `${formatted} ${meta.label.toLowerCase()}`;
+}
+
+/** Formato Dietbox: "Mamão (Grama: 150)" */
+export function formatFoodItemDietbox(item: Pick<DietMealItem, "food" | "quantity" | "unit">): string {
+  const meta = getFoodUnitMeta(item.unit || "g");
+  const qty = Number(item.quantity);
+  const formatted = qty % 1 === 0 ? String(qty) : qty.toFixed(1);
+  return `${item.food} (${meta.dietboxLabel}: ${formatted})`;
+}
+
+export function formatFoodItemLine(item: Pick<DietMealItem, "quantity" | "kcal" | "unit">): string {
+  const qty = formatFoodQuantity(item.quantity, item.unit || "g");
   const kcal = Number(item.kcal ?? 0);
   return kcal > 0 ? `${qty} · ${Math.round(kcal)} kcal` : qty;
+}
+
+export function defaultQuantityForUnit(unit: FoodUnitId): string {
+  if (unit === "un" || unit === "un_md" || unit === "fatia" || unit === "col_sob") return "1";
+  if (unit === "ml") return "200";
+  return "100";
+}
+
+export function getMealMainItems(meal: DietMeal): DietMealItem[] {
+  return (meal.diet_meal_items ?? [])
+    .filter((i) => !i.substitution_set_id)
+    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+}
+
+export function getMealSubstitutionGroups(meal: DietMeal): { set: DietMealSubstitutionSet; items: DietMealItem[] }[] {
+  const sets = [...(meal.diet_meal_substitution_sets ?? [])].sort((a, b) => a.position - b.position);
+  return sets.map((set) => ({
+    set,
+    items: (meal.diet_meal_items ?? [])
+      .filter((i) => i.substitution_set_id === set.id)
+      .sort((a, b) => (a.position ?? 0) - (b.position ?? 0)),
+  }));
 }
 
 export function hasItemMacros(item: Pick<DietMealItem, "kcal" | "protein_g" | "carbs_g" | "fat_g">): boolean {
@@ -356,6 +436,100 @@ export async function removeDietSupplement(supplementId: string) {
 export function sortSupplements(supplements: DietSupplement[] | undefined): DietSupplement[] {
   return [...(supplements ?? [])].sort((a, b) => a.position - b.position);
 }
+
+export function sortSubstitutions(items: DietSubstitution[] | undefined): DietSubstitution[] {
+  return [...(items ?? [])].sort((a, b) => a.position - b.position);
+}
+
+export async function addDietSubstitution(input: {
+  planId: string;
+  originalFood: string;
+  substituteFood: string;
+  notes?: string | null;
+  position: number;
+}) {
+  const { error } = await supabase.from("diet_substitutions").insert({
+    plan_id: input.planId,
+    original_food: input.originalFood.trim(),
+    substitute_food: input.substituteFood.trim(),
+    notes: input.notes?.trim() || null,
+    position: input.position,
+  });
+  if (error) throw error;
+}
+
+export async function removeDietSubstitution(id: string) {
+  const { error } = await supabase.from("diet_substitutions").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function createMealSubstitutionSet(mealId: string, name: string, position: number) {
+  const { data, error } = await supabase
+    .from("diet_meal_substitution_sets")
+    .insert({ meal_id: mealId, name, position })
+    .select("id, meal_id, name, position")
+    .single();
+  if (error) throw error;
+  return data as DietMealSubstitutionSet;
+}
+
+export async function removeMealSubstitutionSet(setId: string) {
+  const { error } = await supabase.from("diet_meal_substitution_sets").delete().eq("id", setId);
+  if (error) throw error;
+}
+
+export type ShoppingListItem = { food: string; quantity: number; unit: string };
+
+export function buildShoppingList(plan: DietPlan): ShoppingListItem[] {
+  const map = new Map<string, ShoppingListItem>();
+  for (const meal of plan.diet_meals ?? []) {
+    for (const item of getMealMainItems(meal as DietMeal)) {
+      const key = `${item.food.toLowerCase()}|${item.unit}`;
+      const existing = map.get(key);
+      if (existing) {
+        existing.quantity += Number(item.quantity) || 0;
+      } else {
+        map.set(key, {
+          food: item.food,
+          quantity: Number(item.quantity) || 0,
+          unit: item.unit || "g",
+        });
+      }
+    }
+  }
+  return [...map.values()].sort((a, b) => a.food.localeCompare(b.food, "pt-BR"));
+}
+
+export type RecipeFromPlan = {
+  id: string;
+  title: string;
+  time: string;
+  content: string;
+};
+
+export function buildRecipesFromPlan(plan: DietPlan): RecipeFromPlan[] {
+  return (plan.diet_meals ?? [])
+    .filter((m) => m.description?.trim())
+    .map((m) => {
+      const meta = getMealSlotMeta(m.slot);
+      return {
+        id: m.id,
+        title: meta.label,
+        time: m.time_label ?? meta.time,
+        content: m.description!.trim(),
+      };
+    });
+}
+
+export const WEEK_DAYS = [
+  { id: 0, short: "Dom", label: "Domingo" },
+  { id: 1, short: "Seg", label: "Segunda" },
+  { id: 2, short: "Ter", label: "Terça" },
+  { id: 3, short: "Qua", label: "Quarta" },
+  { id: 4, short: "Qui", label: "Quinta" },
+  { id: 5, short: "Sex", label: "Sexta" },
+  { id: 6, short: "Sab", label: "Sábado" },
+] as const;
 
 export async function logFoodFromPlanItem(
   alunoId: string,

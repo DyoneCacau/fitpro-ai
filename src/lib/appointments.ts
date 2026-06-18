@@ -296,6 +296,24 @@ export function getAppointmentErrorMessage(err: unknown): string {
   return "Erro ao agendar";
 }
 
+export async function fetchStudentScheduledAppointments(
+  personalId: string,
+  alunoId: string,
+): Promise<StudentAppointment[]> {
+  const { data, error } = await supabase
+    .from("student_appointments")
+    .select(
+      "id, personal_id, aluno_id, scheduled_at, duration_minutes, kind, status, notes, recurrence_days",
+    )
+    .eq("personal_id", personalId)
+    .eq("aluno_id", alunoId)
+    .eq("status", "scheduled")
+    .gte("scheduled_at", startOfDay(new Date()).toISOString())
+    .order("scheduled_at");
+  if (error) throw error;
+  return (data ?? []) as StudentAppointment[];
+}
+
 export async function createAppointment(input: CreateAppointmentInput) {
   const { data, error } = await supabase.rpc("create_student_appointment", {
     _aluno_id: input.aluno_id,
