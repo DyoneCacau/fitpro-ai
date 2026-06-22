@@ -1,30 +1,29 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import {
-  Apple,
-  BookOpen,
-  ChefHat,
-  ClipboardList,
-  ShoppingCart,
-} from "lucide-react";
-import { EmptyState, FeatureHubCard, SubPageHeader, WeekDayTabs } from "@/components/student/FeatureHub";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Apple, BookOpen, ChefHat, ChevronDown, Repeat2, ShoppingCart } from "lucide-react";
+import { EmptyState, SubPageHeader } from "@/components/student/FeatureHub";
 import { DietPlanToolbar } from "@/components/diet/DietPlanToolbar";
 import { MealPlanCard } from "@/components/diet/MealPlanCard";
 import { useAuth } from "@/hooks/use-auth";
 import {
   buildRecipesFromPlan,
   buildShoppingList,
+  fetchMealCompletions,
   fetchStudentActiveDietPlan,
   formatFoodQuantity,
+  setMealCompletion,
+  sortSubstitutions,
+  sortSupplements,
+  todayIsoDate,
   type DietPlan,
 } from "@/lib/diet";
 
-type NutritionView = "hub" | "plano" | "compras" | "receitas";
+type NutritionView = "plano" | "compras" | "receitas";
 
 const SLOT_ORDER = ["cafe", "lanche_manha", "almoco", "lanche_tarde", "jantar", "ceia"] as const;
 
 export function StudentNutritionHub() {
-  const [view, setView] = useState<NutritionView>("hub");
+  const [view, setView] = useState<NutritionView>("plano");
   const { user } = useAuth();
 
   const { data: plan, isLoading } = useQuery({
@@ -33,44 +32,13 @@ export function StudentNutritionHub() {
     queryFn: () => fetchStudentActiveDietPlan(user!.id),
   });
 
-  if (view === "hub") {
-    return (
-      <>
-        <header className="bg-gradient-hero px-5 pt-12 pb-5">
-          <h1 className="text-2xl font-bold text-foreground">Alimentação</h1>
-          <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-            Consulte o espaço disponibilizado pelo seu profissional sobre a alimentação.
-          </p>
-        </header>
-        <div className="px-5 py-5 space-y-3 pb-8">
-          <FeatureHubCard
-            icon={ClipboardList}
-            title="Plano Alimentar"
-            description="Cardápio com refeições, observações e substituições por refeição."
-            onClick={() => setView("plano")}
-          />
-          <FeatureHubCard
-            icon={ShoppingCart}
-            title="Lista de Compras"
-            description="Lista gerada a partir do plano alimentar."
-            onClick={() => setView("compras")}
-          />
-          <FeatureHubCard
-            icon={ChefHat}
-            title="Receitas"
-            description="Preparos e orientações das refeições."
-            onClick={() => setView("receitas")}
-          />
-        </div>
-      </>
-    );
-  }
-
   if (isLoading) {
     return (
       <>
-        <SubPageHeader title="Carregando…" onBack={() => setView("hub")} />
-        <p className="px-5 py-10 text-sm text-muted-foreground text-center">Aguarde…</p>
+        <header className="bg-gradient-hero px-5 pt-12 pb-5">
+          <h1 className="text-2xl font-bold text-foreground">Dieta</h1>
+        </header>
+        <p className="px-5 py-10 text-sm text-muted-foreground text-center">Carregando…</p>
       </>
     );
   }
@@ -78,7 +46,12 @@ export function StudentNutritionHub() {
   if (!plan) {
     return (
       <>
-        <SubPageHeader title="Sem plano" onBack={() => setView("hub")} />
+        <header className="bg-gradient-hero px-5 pt-12 pb-5">
+          <h1 className="text-2xl font-bold text-foreground">Dieta</h1>
+          <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+            Consulte o plano alimentar prescrito pelo seu profissional.
+          </p>
+        </header>
         <EmptyState
           icon={Apple}
           title="Nenhum plano prescrito"
@@ -90,27 +63,120 @@ export function StudentNutritionHub() {
 
   switch (view) {
     case "plano":
-      return <MealPlanView plan={plan} onBack={() => setView("hub")} />;
+      return (
+        <MealPlanView
+          plan={plan}
+          onOpenCompras={() => setView("compras")}
+          onOpenReceitas={() => setView("receitas")}
+        />
+      );
     case "compras":
-      return <ShoppingListView plan={plan} onBack={() => setView("hub")} />;
+      return <ShoppingListView plan={plan} onBack={() => setView("plano")} />;
     case "receitas":
-      return <RecipesView plan={plan} onBack={() => setView("hub")} />;
+      return <RecipesView plan={plan} onBack={() => setView("plano")} />;
     default:
       return null;
   }
 }
 
-function MealPlanView({ plan, onBack }: { plan: DietPlan; onBack: () => void }) {
-  const [selectedDay, setSelectedDay] = useState(new Date().getDay());
+function MealPlanView({
+  plan,
+  onOpenCompras,
+  onOpenReceitas,
+}: {
+  plan: DietPlan;
+  onOpenCompras: () => void;
+  onOpenReceitas: () => void;
+}) {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const today = useMemo(() => todayIsoDate(), []);
   const meals = (plan.diet_meals ?? [])
     .slice()
     .sort((a, b) => SLOT_ORDER.indexOf(a.slot) - SLOT_ORDER.indexOf(b.slot));
+  const supplements = sortSupplements(plan.diet_supplements);
+  const substitutions = sortSubstitutions(plan.diet_substitutions);
+
+  const { data: completedMealIds = new Set<string>() } = useQuery({
+    queryKey: ["mealCompletions", user?.id, today],
+    enabled: !!user?.id,
+    queryFn: () => fetchMealCompletions(user!.id, today),
+  });
+
+  const toggleCompletion = useMutation({
+    mutationFn: async ({ mealId, completed }: { mealId: string; completed: boolean }) => {
+      await setMealCompletion(user!.id, mealId, completed, today);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["mealCompletions", user?.id, today] }),
+  });
+
+  const completedCount = meals.filter((m) => completedMealIds.has(m.id)).length;
 
   return (
     <>
-      <SubPageHeader title="Plano Alimentar" subtitle={plan.name} onBack={onBack} />
-      <WeekDayTabs selectedDay={selectedDay} onSelectDay={setSelectedDay} />
-      <div className="px-5 py-4">
+      <header className="bg-gradient-hero px-5 pt-12 pb-5">
+        <h1 className="text-2xl font-bold text-foreground">Dieta</h1>
+        <p className="text-sm font-medium text-foreground/90 mt-1">{plan.name}</p>
+        <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+          Toque no ✓ para marcar a refeição como realizada hoje. Expanda cada card para ver os detalhes.
+        </p>
+      </header>
+
+      <div className="px-5 py-4 space-y-5 pb-8">
+        {meals.length > 0 && (
+          <div className="rounded-2xl border border-border bg-card p-4">
+            <div className="flex items-end justify-between gap-3 mb-3">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Hoje</p>
+                <p className="text-lg font-bold">
+                  {completedCount}/{meals.length}{" "}
+                  <span className="text-sm font-semibold text-muted-foreground">refeições realizadas</span>
+                </p>
+              </div>
+              <p className="text-xs text-primary font-bold">
+                {completedCount === meals.length ? "Parabéns!" : "Continue assim"}
+              </p>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+              <div
+                className="h-full bg-gradient-primary transition-all"
+                style={{ width: `${meals.length ? (completedCount / meals.length) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
+        )}
+        {(plan.kcal_target ?? plan.protein_g ?? plan.carbs_g ?? plan.fat_g) && (
+          <div className="rounded-2xl border border-border bg-card p-4">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Metas diárias</p>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              {plan.kcal_target != null && (
+                <p>
+                  <span className="text-muted-foreground">Calorias: </span>
+                  <span className="font-semibold">{Math.round(plan.kcal_target)} kcal</span>
+                </p>
+              )}
+              {plan.protein_g != null && (
+                <p>
+                  <span className="text-muted-foreground">Proteína: </span>
+                  <span className="font-semibold">{Math.round(plan.protein_g)} g</span>
+                </p>
+              )}
+              {plan.carbs_g != null && (
+                <p>
+                  <span className="text-muted-foreground">Carbo: </span>
+                  <span className="font-semibold">{Math.round(plan.carbs_g)} g</span>
+                </p>
+              )}
+              {plan.fat_g != null && (
+                <p>
+                  <span className="text-muted-foreground">Gordura: </span>
+                  <span className="font-semibold">{Math.round(plan.fat_g)} g</span>
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
         <DietPlanToolbar
           plan={plan}
           onApplyTemplate={() => {}}
@@ -118,16 +184,129 @@ function MealPlanView({ plan, onBack }: { plan: DietPlan; onBack: () => void }) 
           showApplyTemplate={false}
           showSaveTemplate={false}
         />
-      </div>
-      <div className="px-5 pb-8 space-y-5">
-        <h2 className="text-sm font-bold text-primary">Refeições</h2>
-        {meals.length === 0 ? (
-          <EmptyState icon={Apple} title="Sem refeições" description="Seu plano ainda não possui refeições cadastradas." />
-        ) : (
-          meals.map((m) => <MealPlanCard key={m.id} meal={m} />)
+
+        <div className="space-y-3">
+          <h2 className="text-sm font-bold text-primary">Refeições</h2>
+          {meals.length === 0 ? (
+            <EmptyState
+              icon={Apple}
+              title="Sem refeições"
+              description="Seu plano ainda não possui refeições cadastradas."
+            />
+          ) : (
+            meals.map((m) => (
+              <MealPlanCard
+                key={m.id}
+                meal={m}
+                completed={completedMealIds.has(m.id)}
+                completing={
+                  toggleCompletion.isPending && toggleCompletion.variables?.mealId === m.id
+                }
+                onToggleComplete={() =>
+                  toggleCompletion.mutate({
+                    mealId: m.id,
+                    completed: !completedMealIds.has(m.id),
+                  })
+                }
+              />
+            ))
+          )}
+        </div>
+
+        {supplements.length > 0 && (
+          <ReadOnlyCollapsibleSection title="Suplementos" defaultExpanded={false}>
+            <div className="divide-y divide-border">
+              {supplements.map((s) => (
+                <div key={s.id} className="px-4 py-3">
+                  <p className="text-sm font-medium">{s.name}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {s.dosage.trim() || "—"}
+                    {s.timing?.trim() && ` · ${s.timing.trim()}`}
+                  </p>
+                  {s.notes?.trim() && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{s.notes}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </ReadOnlyCollapsibleSection>
         )}
+
+        {substitutions.length > 0 && (
+          <ReadOnlyCollapsibleSection
+            title="Substituições alimentares"
+            icon={Repeat2}
+            defaultExpanded={false}
+          >
+            <div className="divide-y divide-border">
+              {substitutions.map((s) => (
+                <div key={s.id} className="px-4 py-3">
+                  <p className="text-sm">
+                    <span className="font-medium">{s.original_food}</span>
+                    <span className="text-muted-foreground"> → </span>
+                    <span className="font-medium text-primary">{s.substitute_food}</span>
+                  </p>
+                  {s.notes && <p className="text-[10px] text-muted-foreground mt-0.5">{s.notes}</p>}
+                </div>
+              ))}
+            </div>
+          </ReadOnlyCollapsibleSection>
+        )}
+
+        <div className="grid grid-cols-2 gap-2 pt-2">
+          <button
+            type="button"
+            onClick={onOpenCompras}
+            className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-card px-3 py-3 text-[11px] font-bold text-muted-foreground hover:text-foreground hover:border-primary/30"
+          >
+            <ShoppingCart className="size-3.5" />
+            Lista de compras
+          </button>
+          <button
+            type="button"
+            onClick={onOpenReceitas}
+            className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-card px-3 py-3 text-[11px] font-bold text-muted-foreground hover:text-foreground hover:border-primary/30"
+          >
+            <ChefHat className="size-3.5" />
+            Receitas
+          </button>
+        </div>
       </div>
     </>
+  );
+}
+
+function ReadOnlyCollapsibleSection({
+  title,
+  icon: Icon,
+  defaultExpanded = false,
+  children,
+}: {
+  title: string;
+  icon?: typeof Repeat2;
+  defaultExpanded?: boolean;
+  children: React.ReactNode;
+}) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
+
+  return (
+    <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-muted/20 transition-colors"
+        aria-expanded={expanded}
+      >
+        {Icon && <Icon className="size-4 text-primary shrink-0" />}
+        <span className="flex-1 text-sm font-bold">{title}</span>
+        <ChevronDown
+          className={`size-4 text-muted-foreground shrink-0 transition-transform ${
+            expanded ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+      {expanded && <div className="border-t border-border">{children}</div>}
+    </div>
   );
 }
 
@@ -138,7 +317,11 @@ function ShoppingListView({ plan, onBack }: { plan: DietPlan; onBack: () => void
       <SubPageHeader title="Lista de Compras" subtitle="Gerada a partir do plano alimentar" onBack={onBack} />
       <div className="px-5 py-5 pb-8">
         {items.length === 0 ? (
-          <EmptyState icon={ShoppingCart} title="Lista vazia" description="Adicione alimentos ao plano para gerar a lista de compras." />
+          <EmptyState
+            icon={ShoppingCart}
+            title="Lista vazia"
+            description="O plano ainda não possui alimentos para gerar a lista de compras."
+          />
         ) : (
           <ul className="rounded-2xl border border-border bg-card divide-y divide-border">
             {items.map((item) => (
@@ -163,7 +346,11 @@ function RecipesView({ plan, onBack }: { plan: DietPlan; onBack: () => void }) {
       <SubPageHeader title="Receitas" subtitle="Preparos e orientações das refeições" onBack={onBack} />
       <div className="px-5 py-5 space-y-3 pb-8">
         {recipes.length === 0 ? (
-          <EmptyState icon={ChefHat} title="Nenhuma receita" description="Seu profissional ainda não cadastrou preparos nas refeições." />
+          <EmptyState
+            icon={ChefHat}
+            title="Nenhuma receita"
+            description="Seu profissional ainda não cadastrou preparos nas refeições."
+          />
         ) : (
           recipes.map((r) => (
             <div key={r.id} className="rounded-2xl border border-border bg-card p-4">

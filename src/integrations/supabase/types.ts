@@ -141,6 +141,38 @@ export type Database = {
           },
         ]
       }
+      diet_meal_completions: {
+        Row: {
+          aluno_id: string
+          completed_at: string
+          id: string
+          log_date: string
+          meal_id: string
+        }
+        Insert: {
+          aluno_id: string
+          completed_at?: string
+          id?: string
+          log_date?: string
+          meal_id: string
+        }
+        Update: {
+          aluno_id?: string
+          completed_at?: string
+          id?: string
+          log_date?: string
+          meal_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diet_meal_completions_meal_id_fkey"
+            columns: ["meal_id"]
+            isOneToOne: false
+            referencedRelation: "diet_meals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       diet_plans: {
         Row: {
           aluno_id: string

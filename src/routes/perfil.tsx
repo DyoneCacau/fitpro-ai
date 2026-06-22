@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   LogOut,
   ChevronRight,
@@ -17,6 +18,8 @@ import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
 import { LinkedProfessionalCard } from "@/components/LinkedProfessionalCard";
 import { PageHeader } from "@/components/PageHeader";
+import { ProfileEditSection } from "@/components/profile/ProfileEditSection";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AlunosManager } from "@/components/professional/AlunosManager";
 import { StudentSupplementsSection } from "@/components/student/profile/StudentSupplementsSection";
 import { StudentTrackingHub } from "@/components/student/tracking/StudentTrackingHub";
@@ -25,6 +28,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useLinkedProfessional } from "@/hooks/use-linked-professional";
 import { formatAppRole } from "@/lib/labels";
 import { formatProfessionalSpecialties } from "@/lib/professional";
+import { fetchUserProfile, PROFILE_QUERY_KEY, resolveAvatarUrl } from "@/lib/profile";
 
 type PerfilTab = "conta" | "suplementos" | "acompanhamento" | "alunos";
 
@@ -49,13 +53,33 @@ function Perfil() {
   const { professional, isStudent } = useLinkedProfessional();
   const isProfessional = role === "personal" || role === "admin";
   const [tab, setTab] = useState<PerfilTab>(tabFromUrl ?? "conta");
+  const [headerName, setHeaderName] = useState("");
+  const [headerAvatarUrl, setHeaderAvatarUrl] = useState<string | null>(null);
+
+  const { data: profile } = useQuery({
+    queryKey: [PROFILE_QUERY_KEY, user?.id],
+    enabled: !!user?.id,
+    queryFn: () => fetchUserProfile(user!.id),
+  });
+
+  const { data: profileAvatarUrl } = useQuery({
+    queryKey: [PROFILE_QUERY_KEY, user?.id, "avatar", profile?.avatar_url],
+    enabled: !!profile?.avatar_url,
+    queryFn: () => resolveAvatarUrl(profile!.avatar_url),
+  });
 
   useEffect(() => {
     if (tabFromUrl) setTab(tabFromUrl);
     else setTab("conta");
   }, [tabFromUrl]);
 
-  const name = (user?.user_metadata?.full_name as string) ?? user?.email ?? "Atleta";
+  const defaultName =
+    profile?.full_name ??
+    (user?.user_metadata?.full_name as string | undefined) ??
+    user?.email ??
+    "Atleta";
+  const name = headerName || defaultName;
+  const avatarUrl = headerAvatarUrl ?? profileAvatarUrl ?? null;
   const initials = name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 
   const studentTabs: { id: PerfilTab; label: string; icon: typeof UserIcon }[] = [
@@ -86,9 +110,12 @@ function Perfil() {
 
       <section className="px-5 pt-5">
         <div className="rounded-3xl bg-gradient-card border border-border p-5 shadow-card text-center">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-primary text-primary-foreground font-bold text-2xl shadow-glow">
-            {initials}
-          </div>
+          <Avatar className="mx-auto h-20 w-20 border-2 border-primary/20 shadow-glow">
+            {avatarUrl && <AvatarImage src={avatarUrl} alt={name} />}
+            <AvatarFallback className="bg-gradient-primary text-primary-foreground font-bold text-2xl">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
           <h2 className="mt-3 text-xl font-bold">{name}</h2>
           <p className="text-xs text-muted-foreground">{user?.email}</p>
           {role && (
@@ -101,6 +128,11 @@ function Perfil() {
                 : formatAppRole(role)}
             </span>
           )}
+
+          <ProfileEditSection
+            onAvatarChange={setHeaderAvatarUrl}
+            onNameChange={setHeaderName}
+          />
         </div>
       </section>
 

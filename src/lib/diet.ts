@@ -191,6 +191,45 @@ export function todayIsoDate(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+export async function fetchMealCompletions(alunoId: string, logDate = todayIsoDate()) {
+  const { data, error } = await supabase
+    .from("diet_meal_completions")
+    .select("meal_id")
+    .eq("aluno_id", alunoId)
+    .eq("log_date", logDate);
+  if (error) throw error;
+  return new Set((data ?? []).map((row) => row.meal_id as string));
+}
+
+export async function setMealCompletion(
+  alunoId: string,
+  mealId: string,
+  completed: boolean,
+  logDate = todayIsoDate(),
+) {
+  if (completed) {
+    const { error } = await supabase.from("diet_meal_completions").upsert(
+      {
+        aluno_id: alunoId,
+        meal_id: mealId,
+        log_date: logDate,
+        completed_at: new Date().toISOString(),
+      },
+      { onConflict: "aluno_id,meal_id,log_date" },
+    );
+    if (error) throw error;
+    return;
+  }
+
+  const { error } = await supabase
+    .from("diet_meal_completions")
+    .delete()
+    .eq("aluno_id", alunoId)
+    .eq("meal_id", mealId)
+    .eq("log_date", logDate);
+  if (error) throw error;
+}
+
 export function sumMealItems(items: DietMealItem[]) {
   return items.reduce(
     (acc, item) => ({

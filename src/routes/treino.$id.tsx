@@ -1,7 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { ChevronLeft, Dumbbell, Loader2, Play } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Check, ChevronLeft, Dumbbell, Loader2, Play } from "lucide-react";
 import { AuthGate } from "@/components/AuthGate";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -48,6 +48,20 @@ function WorkoutPage() {
   const { id } = Route.useParams();
   const router = useRouter();
   const [active, setActive] = useState(false);
+  const [completedSetIds, setCompletedSetIds] = useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    if (!active) setCompletedSetIds(new Set());
+  }, [active]);
+
+  function toggleSetComplete(setId: string) {
+    setCompletedSetIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(setId)) next.delete(setId);
+      else next.add(setId);
+      return next;
+    });
+  }
 
   const { data: workout, isLoading, error } = useQuery({
     queryKey: ["workoutDetail", id],
@@ -137,7 +151,7 @@ function WorkoutPage() {
               Treino em andamento · Treino {workout.letter}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              Registre carga e reps em cada exercício abaixo
+              Toque em cada série para marcar como concluída
             </p>
             <button
               type="button"
@@ -157,16 +171,33 @@ function WorkoutPage() {
           </p>
         )}
         {exercises.map((exercise) => (
-          <ExerciseCard key={exercise.id} exercise={exercise} active={active} />
+          <ExerciseCard
+            key={exercise.id}
+            exercise={exercise}
+            active={active}
+            completedSetIds={completedSetIds}
+            onToggleSet={toggleSetComplete}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-function ExerciseCard({ exercise, active }: { exercise: DbExercise; active: boolean }) {
+function ExerciseCard({
+  exercise,
+  active,
+  completedSetIds,
+  onToggleSet,
+}: {
+  exercise: DbExercise;
+  active: boolean;
+  completedSetIds: Set<string>;
+  onToggleSet: (setId: string) => void;
+}) {
   const sets = exercise.exercise_sets ?? [];
   const hasSetNotes = sets.some((set) => set.note?.trim());
+  const completedCount = sets.filter((set) => completedSetIds.has(set.id)).length;
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden flex shadow-card">
@@ -196,21 +227,60 @@ function ExerciseCard({ exercise, active }: { exercise: DbExercise; active: bool
 
         {(active || hasSetNotes) && sets.length > 0 && (
           <div className="mt-3 space-y-1.5 border-t border-border pt-3">
-            {sets.map((set) => (
-              <div key={set.id} className="space-y-0.5">
-                <div className="flex items-center gap-2 text-xs bg-background rounded-lg border border-border px-2 py-1.5">
-                  <span className="font-bold w-6 text-primary">{set.position}ª</span>
-                  <span className="flex-1 text-foreground">{set.target_reps}</span>
-                  <span className="text-muted-foreground">{set.target_load ?? 0} kg</span>
+            {active && sets.length > 0 && (
+              <p className="text-[10px] font-semibold text-muted-foreground mb-1">
+                {completedCount}/{sets.length} séries concluídas
+              </p>
+            )}
+            {sets.map((set) => {
+              const done = completedSetIds.has(set.id);
+
+              return (
+                <div key={set.id} className="space-y-0.5">
+                  {active ? (
+                    <button
+                      type="button"
+                      onClick={() => onToggleSet(set.id)}
+                      aria-pressed={done}
+                      aria-label={`Série ${set.position}${done ? " concluída" : ""}`}
+                      className={`flex w-full items-center gap-2 rounded-lg border px-2 py-1.5 text-xs transition-colors active:scale-[0.99] ${
+                        done
+                          ? "border-primary/40 bg-primary/10"
+                          : "border-border bg-background hover:bg-muted/40"
+                      }`}
+                    >
+                      <span
+                        className={`flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
+                          done
+                            ? "bg-primary text-primary-foreground"
+                            : "border border-border text-primary"
+                        }`}
+                      >
+                        {done ? <Check className="size-3.5" strokeWidth={3} /> : `${set.position}ª`}
+                      </span>
+                      <span className={`flex-1 text-left ${done ? "text-muted-foreground line-through" : "text-foreground"}`}>
+                        {set.target_reps}
+                      </span>
+                      <span className={done ? "text-muted-foreground line-through" : "text-muted-foreground"}>
+                        {set.target_load ?? 0} kg
+                      </span>
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-2 py-1.5 text-xs">
+                      <span className="w-6 font-bold text-primary">{set.position}ª</span>
+                      <span className="flex-1 text-foreground">{set.target_reps}</span>
+                      <span className="text-muted-foreground">{set.target_load ?? 0} kg</span>
+                    </div>
+                  )}
+                  {set.note?.trim() && (
+                    <p className="text-[11px] text-muted-foreground pl-8 leading-snug">
+                      <span className="font-semibold text-foreground">Obs.: </span>
+                      {set.note.trim()}
+                    </p>
+                  )}
                 </div>
-                {set.note?.trim() && (
-                  <p className="text-[11px] text-muted-foreground pl-8 leading-snug">
-                    <span className="font-semibold text-foreground">Obs.: </span>
-                    {set.note.trim()}
-                  </p>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
