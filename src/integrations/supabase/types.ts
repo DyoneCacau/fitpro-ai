@@ -12,8 +12,186 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
+      anamnesis: {
+        Row: {
+          activity_level: Database["public"]["Enums"]["activity_level"]
+          age: number
+          alcohol_use: string | null
+          aluno_id: string
+          assessed_at: string
+          bmr: number
+          body_fat_pct: number | null
+          carbs_g: number
+          clinical_notes: string | null
+          created_at: string
+          digestion_notes: string | null
+          expectations: string | null
+          family_history: string | null
+          fat_g: number
+          food_preferences: string | null
+          goal: Database["public"]["Enums"]["fitness_goal"]
+          height_cm: number
+          id: string
+          injuries: string | null
+          is_active: boolean
+          kcal_target: number
+          lean_mass_kg: number | null
+          main_motivation: string | null
+          meals_per_day: number | null
+          measurements: Json | null
+          medical_history: string | null
+          medications: string | null
+          occupation: string | null
+          pain_or_limitations: string | null
+          par_q_cleared: boolean | null
+          par_q_notes: string | null
+          personal_id: string
+          protein_g: number
+          restrictions: string | null
+          sex: string
+          sleep_hours: number | null
+          smoking: string | null
+          stress_level: string | null
+          supplements_used: string | null
+          surgeries: string | null
+          tdee: number
+          training_days_per_week: number | null
+          training_experience: string | null
+          training_history: string | null
+          training_location: string | null
+          updated_at: string
+          weekly_availability: string | null
+          weight_kg: number
+        }
+        Insert: {
+          activity_level: Database["public"]["Enums"]["activity_level"]
+          age: number
+          alcohol_use?: string | null
+          aluno_id: string
+          assessed_at?: string
+          bmr: number
+          body_fat_pct?: number | null
+          carbs_g: number
+          clinical_notes?: string | null
+          created_at?: string
+          digestion_notes?: string | null
+          expectations?: string | null
+          family_history?: string | null
+          fat_g: number
+          food_preferences?: string | null
+          goal: Database["public"]["Enums"]["fitness_goal"]
+          height_cm: number
+          id?: string
+          injuries?: string | null
+          is_active?: boolean
+          kcal_target: number
+          lean_mass_kg?: number | null
+          main_motivation?: string | null
+          meals_per_day?: number | null
+          measurements?: Json | null
+          medical_history?: string | null
+          medications?: string | null
+          occupation?: string | null
+          pain_or_limitations?: string | null
+          par_q_cleared?: boolean | null
+          par_q_notes?: string | null
+          personal_id: string
+          protein_g: number
+          restrictions?: string | null
+          sex: string
+          sleep_hours?: number | null
+          smoking?: string | null
+          stress_level?: string | null
+          supplements_used?: string | null
+          surgeries?: string | null
+          tdee: number
+          training_days_per_week?: number | null
+          training_experience?: string | null
+          training_history?: string | null
+          training_location?: string | null
+          updated_at?: string
+          weekly_availability?: string | null
+          weight_kg: number
+        }
+        Update: {
+          activity_level?: Database["public"]["Enums"]["activity_level"]
+          age?: number
+          alcohol_use?: string | null
+          aluno_id?: string
+          assessed_at?: string
+          bmr?: number
+          body_fat_pct?: number | null
+          carbs_g?: number
+          clinical_notes?: string | null
+          created_at?: string
+          digestion_notes?: string | null
+          expectations?: string | null
+          family_history?: string | null
+          fat_g?: number
+          food_preferences?: string | null
+          goal?: Database["public"]["Enums"]["fitness_goal"]
+          height_cm?: number
+          id?: string
+          injuries?: string | null
+          is_active?: boolean
+          kcal_target?: number
+          lean_mass_kg?: number | null
+          main_motivation?: string | null
+          meals_per_day?: number | null
+          measurements?: Json | null
+          medical_history?: string | null
+          medications?: string | null
+          occupation?: string | null
+          pain_or_limitations?: string | null
+          par_q_cleared?: boolean | null
+          par_q_notes?: string | null
+          personal_id?: string
+          protein_g?: number
+          restrictions?: string | null
+          sex?: string
+          sleep_hours?: number | null
+          smoking?: string | null
+          stress_level?: string | null
+          supplements_used?: string | null
+          surgeries?: string | null
+          tdee?: number
+          training_days_per_week?: number | null
+          training_experience?: string | null
+          training_history?: string | null
+          training_location?: string | null
+          updated_at?: string
+          weekly_availability?: string | null
+          weight_kg?: number
+        }
+        Relationships: []
+      }
       assessments: {
         Row: {
           aluno_id: string
@@ -59,6 +237,92 @@ export type Database = {
         }
         Relationships: []
       }
+      billing_plans: {
+        Row: {
+          amount_cents: number
+          billing_cycle: string
+          created_at: string
+          id: string
+          name: string
+          personal_id: string
+        }
+        Insert: {
+          amount_cents: number
+          billing_cycle?: string
+          created_at?: string
+          id?: string
+          name: string
+          personal_id: string
+        }
+        Update: {
+          amount_cents?: number
+          billing_cycle?: string
+          created_at?: string
+          id?: string
+          name?: string
+          personal_id?: string
+        }
+        Relationships: []
+      }
+      device_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          platform: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          platform: string
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          platform?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      diet_meal_completions: {
+        Row: {
+          aluno_id: string
+          completed_at: string
+          id: string
+          log_date: string
+          meal_id: string
+        }
+        Insert: {
+          aluno_id: string
+          completed_at?: string
+          id?: string
+          log_date?: string
+          meal_id: string
+        }
+        Update: {
+          aluno_id?: string
+          completed_at?: string
+          id?: string
+          log_date?: string
+          meal_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diet_meal_completions_meal_id_fkey"
+            columns: ["meal_id"]
+            isOneToOne: false
+            referencedRelation: "diet_meals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       diet_meal_items: {
         Row: {
           carbs_g: number | null
@@ -67,9 +331,11 @@ export type Database = {
           id: string
           kcal: number | null
           meal_id: string
+          notes: string | null
           position: number | null
           protein_g: number | null
           quantity: number
+          substitution_set_id: string | null
           unit: string
         }
         Insert: {
@@ -79,9 +345,11 @@ export type Database = {
           id?: string
           kcal?: number | null
           meal_id: string
+          notes?: string | null
           position?: number | null
           protein_g?: number | null
           quantity?: number
+          substitution_set_id?: string | null
           unit?: string
         }
         Update: {
@@ -91,14 +359,55 @@ export type Database = {
           id?: string
           kcal?: number | null
           meal_id?: string
+          notes?: string | null
           position?: number | null
           protein_g?: number | null
           quantity?: number
+          substitution_set_id?: string | null
           unit?: string
         }
         Relationships: [
           {
             foreignKeyName: "diet_meal_items_meal_id_fkey"
+            columns: ["meal_id"]
+            isOneToOne: false
+            referencedRelation: "diet_meals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diet_meal_items_substitution_set_id_fkey"
+            columns: ["substitution_set_id"]
+            isOneToOne: false
+            referencedRelation: "diet_meal_substitution_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diet_meal_substitution_sets: {
+        Row: {
+          created_at: string
+          id: string
+          meal_id: string
+          name: string
+          position: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meal_id: string
+          name?: string
+          position?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meal_id?: string
+          name?: string
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diet_meal_substitution_sets_meal_id_fkey"
             columns: ["meal_id"]
             isOneToOne: false
             referencedRelation: "diet_meals"
@@ -141,323 +450,166 @@ export type Database = {
           },
         ]
       }
-      diet_meal_completions: {
-        Row: {
-          aluno_id: string
-          completed_at: string
-          id: string
-          log_date: string
-          meal_id: string
-        }
-        Insert: {
-          aluno_id: string
-          completed_at?: string
-          id?: string
-          log_date?: string
-          meal_id: string
-        }
-        Update: {
-          aluno_id?: string
-          completed_at?: string
-          id?: string
-          log_date?: string
-          meal_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "diet_meal_completions_meal_id_fkey"
-            columns: ["meal_id"]
-            isOneToOne: false
-            referencedRelation: "diet_meals"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      device_tokens: {
-        Row: {
-          created_at: string
-          id: string
-          platform: string
-          token: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          platform: string
-          token: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          platform?: string
-          token?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      health_metrics_daily: {
-        Row: {
-          active_calories: number | null
-          created_at: string
-          distance_m: number | null
-          heart_rate_avg: number | null
-          id: string
-          metric_date: string
-          provider: string
-          resting_calories: number | null
-          sleep_minutes: number | null
-          source_label: string | null
-          steps: number | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          active_calories?: number | null
-          created_at?: string
-          distance_m?: number | null
-          heart_rate_avg?: number | null
-          id?: string
-          metric_date: string
-          provider: string
-          resting_calories?: number | null
-          sleep_minutes?: number | null
-          source_label?: string | null
-          steps?: number | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          active_calories?: number | null
-          created_at?: string
-          distance_m?: number | null
-          heart_rate_avg?: number | null
-          id?: string
-          metric_date?: string
-          provider?: string
-          resting_calories?: number | null
-          sleep_minutes?: number | null
-          source_label?: string | null
-          steps?: number | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      wearable_activities: {
-        Row: {
-          activity_type: string | null
-          calories: number | null
-          created_at: string
-          distance_m: number | null
-          duration_sec: number | null
-          external_id: string
-          id: string
-          name: string
-          provider: string
-          raw_data: Json | null
-          started_at: string
-          user_id: string
-        }
-        Insert: {
-          activity_type?: string | null
-          calories?: number | null
-          created_at?: string
-          distance_m?: number | null
-          duration_sec?: number | null
-          external_id: string
-          id?: string
-          name: string
-          provider: string
-          raw_data?: Json | null
-          started_at: string
-          user_id: string
-        }
-        Update: {
-          activity_type?: string | null
-          calories?: number | null
-          created_at?: string
-          distance_m?: number | null
-          duration_sec?: number | null
-          external_id?: string
-          id?: string
-          name?: string
-          provider?: string
-          raw_data?: Json | null
-          started_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      wearable_connections: {
-        Row: {
-          access_token: string | null
-          created_at: string
-          external_user_id: string | null
-          id: string
-          last_sync_at: string | null
-          metadata: Json
-          provider: string
-          refresh_token: string | null
-          scopes: string[] | null
-          token_expires_at: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          access_token?: string | null
-          created_at?: string
-          external_user_id?: string | null
-          id?: string
-          last_sync_at?: string | null
-          metadata?: Json
-          provider: string
-          refresh_token?: string | null
-          scopes?: string[] | null
-          token_expires_at?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          access_token?: string | null
-          created_at?: string
-          external_user_id?: string | null
-          id?: string
-          last_sync_at?: string | null
-          metadata?: Json
-          provider?: string
-          refresh_token?: string | null
-          scopes?: string[] | null
-          token_expires_at?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       diet_plans: {
         Row: {
-          aluno_id: string
+          aluno_id: string | null
           carbs_g: number | null
           created_at: string
           fat_g: number | null
           id: string
           is_active: boolean
+          is_template: boolean
           kcal_target: number | null
           name: string
+          notes: string | null
           personal_id: string | null
           protein_g: number | null
           updated_at: string
         }
         Insert: {
-          aluno_id: string
+          aluno_id?: string | null
           carbs_g?: number | null
           created_at?: string
           fat_g?: number | null
           id?: string
           is_active?: boolean
+          is_template?: boolean
           kcal_target?: number | null
           name?: string
+          notes?: string | null
           personal_id?: string | null
           protein_g?: number | null
           updated_at?: string
         }
         Update: {
-          aluno_id?: string
+          aluno_id?: string | null
           carbs_g?: number | null
           created_at?: string
           fat_g?: number | null
           id?: string
           is_active?: boolean
+          is_template?: boolean
           kcal_target?: number | null
           name?: string
+          notes?: string | null
           personal_id?: string | null
           protein_g?: number | null
           updated_at?: string
         }
         Relationships: []
       }
-      student_appointments: {
+      diet_substitutions: {
         Row: {
-          aluno_id: string
           created_at: string
-          duration_minutes: number
           id: string
-          kind: Database["public"]["Enums"]["appointment_kind"]
           notes: string | null
-          personal_id: string
-          recurrence_days: number | null
-          scheduled_at: string
-          status: Database["public"]["Enums"]["appointment_status"]
-          updated_at: string
+          original_food: string
+          plan_id: string
+          position: number
+          substitute_food: string
         }
         Insert: {
-          aluno_id: string
           created_at?: string
-          duration_minutes?: number
           id?: string
-          kind?: Database["public"]["Enums"]["appointment_kind"]
           notes?: string | null
-          personal_id: string
-          recurrence_days?: number | null
-          scheduled_at: string
-          status?: Database["public"]["Enums"]["appointment_status"]
-          updated_at?: string
+          original_food: string
+          plan_id: string
+          position?: number
+          substitute_food: string
         }
         Update: {
-          aluno_id?: string
           created_at?: string
-          duration_minutes?: number
           id?: string
-          kind?: Database["public"]["Enums"]["appointment_kind"]
           notes?: string | null
-          personal_id?: string
-          recurrence_days?: number | null
-          scheduled_at?: string
-          status?: Database["public"]["Enums"]["appointment_status"]
-          updated_at?: string
+          original_food?: string
+          plan_id?: string
+          position?: number
+          substitute_food?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "diet_substitutions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "diet_plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
-      student_follow_ups: {
+      diet_supplements: {
         Row: {
-          aluno_id: string
           created_at: string
+          dosage: string
           id: string
-          interval_days: number
-          is_active: boolean
-          kind: Database["public"]["Enums"]["appointment_kind"]
-          last_visit_at: string | null
+          name: string
           notes: string | null
-          personal_id: string
-          updated_at: string
+          plan_id: string
+          position: number
+          timing: string | null
         }
         Insert: {
-          aluno_id: string
           created_at?: string
+          dosage?: string
           id?: string
-          interval_days?: number
-          is_active?: boolean
-          kind?: Database["public"]["Enums"]["appointment_kind"]
-          last_visit_at?: string | null
+          name: string
           notes?: string | null
-          personal_id: string
-          updated_at?: string
+          plan_id: string
+          position?: number
+          timing?: string | null
         }
         Update: {
-          aluno_id?: string
+          created_at?: string
+          dosage?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          plan_id?: string
+          position?: number
+          timing?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diet_supplements_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "diet_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exercise_catalog: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          image_path: string | null
+          muscle_group: string | null
+          name: string
+          personal_id: string
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          category?: string | null
           created_at?: string
           id?: string
-          interval_days?: number
-          is_active?: boolean
-          kind?: Database["public"]["Enums"]["appointment_kind"]
-          last_visit_at?: string | null
-          notes?: string | null
+          image_path?: string | null
+          muscle_group?: string | null
+          name: string
+          personal_id: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          image_path?: string | null
+          muscle_group?: string | null
+          name?: string
           personal_id?: string
           updated_at?: string
+          video_url?: string | null
         }
         Relationships: []
       }
@@ -563,6 +715,7 @@ export type Database = {
           protein_g: number | null
           quantity: number
           slot: Database["public"]["Enums"]["meal_slot"]
+          source_meal_item_id: string | null
           unit: string
         }
         Insert: {
@@ -578,6 +731,7 @@ export type Database = {
           protein_g?: number | null
           quantity?: number
           slot: Database["public"]["Enums"]["meal_slot"]
+          source_meal_item_id?: string | null
           unit?: string
         }
         Update: {
@@ -593,9 +747,116 @@ export type Database = {
           protein_g?: number | null
           quantity?: number
           slot?: Database["public"]["Enums"]["meal_slot"]
+          source_meal_item_id?: string | null
           unit?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "food_logs_source_meal_item_id_fkey"
+            columns: ["source_meal_item_id"]
+            isOneToOne: false
+            referencedRelation: "diet_meal_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      health_metrics_daily: {
+        Row: {
+          active_calories: number | null
+          created_at: string
+          distance_m: number | null
+          heart_rate_avg: number | null
+          id: string
+          metric_date: string
+          provider: string
+          resting_calories: number | null
+          sleep_minutes: number | null
+          source_label: string | null
+          steps: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active_calories?: number | null
+          created_at?: string
+          distance_m?: number | null
+          heart_rate_avg?: number | null
+          id?: string
+          metric_date: string
+          provider: string
+          resting_calories?: number | null
+          sleep_minutes?: number | null
+          source_label?: string | null
+          steps?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active_calories?: number | null
+          created_at?: string
+          distance_m?: number | null
+          heart_rate_avg?: number | null
+          id?: string
+          metric_date?: string
+          provider?: string
+          resting_calories?: number | null
+          sleep_minutes?: number | null
+          source_label?: string | null
+          steps?: number | null
+          updated_at?: string
+          user_id?: string
+        }
         Relationships: []
+      }
+      invoices: {
+        Row: {
+          aluno_id: string
+          amount_cents: number
+          created_at: string
+          due_date: string
+          id: string
+          notes: string | null
+          paid_at: string | null
+          payment_method: string | null
+          personal_id: string
+          status: string
+          subscription_id: string | null
+        }
+        Insert: {
+          aluno_id: string
+          amount_cents: number
+          created_at?: string
+          due_date: string
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          personal_id: string
+          status?: string
+          subscription_id?: string | null
+        }
+        Update: {
+          aluno_id?: string
+          amount_cents?: number
+          created_at?: string
+          due_date?: string
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          personal_id?: string
+          status?: string
+          subscription_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "student_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -718,159 +979,136 @@ export type Database = {
         }
         Relationships: []
       }
+      professional_subscriptions: {
+        Row: {
+          cardholder_name: string | null
+          created_at: string
+          current_period_end: string | null
+          gateway: string | null
+          gateway_customer_id: string | null
+          gateway_subscription_id: string | null
+          id: string
+          plan: string
+          price_cents: number
+          professional_id: string
+          status: string
+          trial_ends_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          cardholder_name?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          gateway?: string | null
+          gateway_customer_id?: string | null
+          gateway_subscription_id?: string | null
+          id?: string
+          plan?: string
+          price_cents?: number
+          professional_id: string
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cardholder_name?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          gateway?: string | null
+          gateway_customer_id?: string | null
+          gateway_subscription_id?: string | null
+          id?: string
+          plan?: string
+          price_cents?: number
+          professional_id?: string
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           birth_date: string | null
           created_at: string
+          document_number: string | null
+          document_type: string | null
+          follow_up_interval_days: number | null
+          follow_up_kind: Database["public"]["Enums"]["appointment_kind"] | null
           full_name: string | null
           id: string
+          instagram: string | null
           is_nutritionist: boolean
           is_personal_trainer: boolean
+          onboarding_completed_at: string | null
+          onboarding_revenue_range: string | null
+          onboarding_skipped: boolean
+          onboarding_student_range: string | null
           personal_id: string | null
           phone: string | null
           registry_number: string | null
-          registry_type: Database["public"]["Enums"]["professional_registry"] | null
+          registry_type:
+            | Database["public"]["Enums"]["professional_registry"]
+            | null
+          tour_completed_at: string | null
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
           birth_date?: string | null
           created_at?: string
+          document_number?: string | null
+          document_type?: string | null
+          follow_up_interval_days?: number | null
+          follow_up_kind?:
+            | Database["public"]["Enums"]["appointment_kind"]
+            | null
           full_name?: string | null
           id: string
+          instagram?: string | null
           is_nutritionist?: boolean
           is_personal_trainer?: boolean
+          onboarding_completed_at?: string | null
+          onboarding_revenue_range?: string | null
+          onboarding_skipped?: boolean
+          onboarding_student_range?: string | null
           personal_id?: string | null
           phone?: string | null
           registry_number?: string | null
-          registry_type?: Database["public"]["Enums"]["professional_registry"] | null
+          registry_type?:
+            | Database["public"]["Enums"]["professional_registry"]
+            | null
+          tour_completed_at?: string | null
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
           birth_date?: string | null
           created_at?: string
+          document_number?: string | null
+          document_type?: string | null
+          follow_up_interval_days?: number | null
+          follow_up_kind?:
+            | Database["public"]["Enums"]["appointment_kind"]
+            | null
           full_name?: string | null
           id?: string
+          instagram?: string | null
           is_nutritionist?: boolean
           is_personal_trainer?: boolean
+          onboarding_completed_at?: string | null
+          onboarding_revenue_range?: string | null
+          onboarding_skipped?: boolean
+          onboarding_student_range?: string | null
           personal_id?: string | null
           phone?: string | null
           registry_number?: string | null
-          registry_type?: Database["public"]["Enums"]["professional_registry"] | null
+          registry_type?:
+            | Database["public"]["Enums"]["professional_registry"]
+            | null
+          tour_completed_at?: string | null
           updated_at?: string
-        }
-        Relationships: []
-      }
-      anamnesis: {
-        Row: {
-          activity_level: Database["public"]["Enums"]["activity_level"]
-          age: number
-          aluno_id: string
-          assessed_at: string
-          bmr: number
-          carbs_g: number
-          clinical_notes: string | null
-          created_at: string
-          fat_g: number
-          goal: Database["public"]["Enums"]["fitness_goal"]
-          height_cm: number
-          id: string
-          is_active: boolean
-          kcal_target: number
-          personal_id: string
-          protein_g: number
-          restrictions: string | null
-          sex: string
-          tdee: number
-          updated_at: string
-          weight_kg: number
-        }
-        Insert: {
-          activity_level: Database["public"]["Enums"]["activity_level"]
-          age: number
-          aluno_id: string
-          assessed_at?: string
-          bmr: number
-          carbs_g: number
-          clinical_notes?: string | null
-          created_at?: string
-          fat_g: number
-          goal: Database["public"]["Enums"]["fitness_goal"]
-          height_cm: number
-          id?: string
-          is_active?: boolean
-          kcal_target: number
-          personal_id: string
-          protein_g: number
-          restrictions?: string | null
-          sex: string
-          tdee: number
-          updated_at?: string
-          weight_kg: number
-        }
-        Update: {
-          activity_level?: Database["public"]["Enums"]["activity_level"]
-          age?: number
-          aluno_id?: string
-          assessed_at?: string
-          bmr?: number
-          carbs_g?: number
-          clinical_notes?: string | null
-          created_at?: string
-          fat_g?: number
-          goal?: Database["public"]["Enums"]["fitness_goal"]
-          height_cm?: number
-          id?: string
-          is_active?: boolean
-          kcal_target?: number
-          personal_id?: string
-          protein_g?: number
-          restrictions?: string | null
-          sex?: string
-          tdee?: number
-          updated_at?: string
-          weight_kg?: number
-        }
-        Relationships: []
-      }
-      student_invitations: {
-        Row: {
-          accepted_at: string | null
-          accepted_by: string | null
-          created_at: string
-          email: string
-          expires_at: string
-          full_name: string | null
-          id: string
-          personal_id: string
-          status: string
-          token: string
-        }
-        Insert: {
-          accepted_at?: string | null
-          accepted_by?: string | null
-          created_at?: string
-          email: string
-          expires_at?: string
-          full_name?: string | null
-          id?: string
-          personal_id: string
-          status?: string
-          token?: string
-        }
-        Update: {
-          accepted_at?: string | null
-          accepted_by?: string | null
-          created_at?: string
-          email?: string
-          expires_at?: string
-          full_name?: string | null
-          id?: string
-          personal_id?: string
-          status?: string
-          token?: string
         }
         Relationships: []
       }
@@ -919,6 +1157,278 @@ export type Database = {
           },
         ]
       }
+      student_appointments: {
+        Row: {
+          aluno_id: string
+          created_at: string
+          duration_minutes: number
+          id: string
+          kind: Database["public"]["Enums"]["appointment_kind"]
+          notes: string | null
+          personal_id: string
+          recurrence_days: number | null
+          scheduled_at: string
+          status: Database["public"]["Enums"]["appointment_status"]
+          updated_at: string
+        }
+        Insert: {
+          aluno_id: string
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          kind?: Database["public"]["Enums"]["appointment_kind"]
+          notes?: string | null
+          personal_id: string
+          recurrence_days?: number | null
+          scheduled_at: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          updated_at?: string
+        }
+        Update: {
+          aluno_id?: string
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          kind?: Database["public"]["Enums"]["appointment_kind"]
+          notes?: string | null
+          personal_id?: string
+          recurrence_days?: number | null
+          scheduled_at?: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      student_follow_ups: {
+        Row: {
+          aluno_id: string
+          created_at: string
+          id: string
+          interval_days: number
+          is_active: boolean
+          kind: Database["public"]["Enums"]["appointment_kind"]
+          last_visit_at: string | null
+          notes: string | null
+          personal_id: string
+          updated_at: string
+        }
+        Insert: {
+          aluno_id: string
+          created_at?: string
+          id?: string
+          interval_days?: number
+          is_active?: boolean
+          kind?: Database["public"]["Enums"]["appointment_kind"]
+          last_visit_at?: string | null
+          notes?: string | null
+          personal_id: string
+          updated_at?: string
+        }
+        Update: {
+          aluno_id?: string
+          created_at?: string
+          id?: string
+          interval_days?: number
+          is_active?: boolean
+          kind?: Database["public"]["Enums"]["appointment_kind"]
+          last_visit_at?: string | null
+          notes?: string | null
+          personal_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      student_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          follow_up_interval_days: number
+          follow_up_kind: Database["public"]["Enums"]["appointment_kind"]
+          full_name: string | null
+          id: string
+          personal_id: string
+          status: string
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          follow_up_interval_days?: number
+          follow_up_kind?: Database["public"]["Enums"]["appointment_kind"]
+          full_name?: string | null
+          id?: string
+          personal_id: string
+          status?: string
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          follow_up_interval_days?: number
+          follow_up_kind?: Database["public"]["Enums"]["appointment_kind"]
+          full_name?: string | null
+          id?: string
+          personal_id?: string
+          status?: string
+          token?: string
+        }
+        Relationships: []
+      }
+      student_lab_exams: {
+        Row: {
+          aluno_id: string
+          created_at: string
+          exam_date: string | null
+          exam_name: string
+          id: string
+          notes: string | null
+          personal_id: string
+          results: string | null
+        }
+        Insert: {
+          aluno_id: string
+          created_at?: string
+          exam_date?: string | null
+          exam_name: string
+          id?: string
+          notes?: string | null
+          personal_id: string
+          results?: string | null
+        }
+        Update: {
+          aluno_id?: string
+          created_at?: string
+          exam_date?: string | null
+          exam_name?: string
+          id?: string
+          notes?: string | null
+          personal_id?: string
+          results?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_lab_exams_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_lab_exams_personal_id_fkey"
+            columns: ["personal_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_materials: {
+        Row: {
+          aluno_id: string
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          link_url: string | null
+          personal_id: string
+          title: string
+        }
+        Insert: {
+          aluno_id: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          link_url?: string | null
+          personal_id: string
+          title: string
+        }
+        Update: {
+          aluno_id?: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          link_url?: string | null
+          personal_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_materials_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_materials_personal_id_fkey"
+            columns: ["personal_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_subscriptions: {
+        Row: {
+          aluno_id: string
+          amount_cents: number
+          created_at: string
+          id: string
+          next_due_date: string
+          notes: string | null
+          personal_id: string
+          plan_id: string | null
+          starts_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          aluno_id: string
+          amount_cents: number
+          created_at?: string
+          id?: string
+          next_due_date: string
+          notes?: string | null
+          personal_id: string
+          plan_id?: string | null
+          starts_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          aluno_id?: string
+          amount_cents?: number
+          created_at?: string
+          id?: string
+          next_due_date?: string
+          notes?: string | null
+          personal_id?: string
+          plan_id?: string | null
+          starts_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "billing_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -940,49 +1450,192 @@ export type Database = {
         }
         Relationships: []
       }
-      workout_sessions: {
+      wearable_activities: {
         Row: {
-          aluno_id: string
+          activity_type: string | null
+          calories: number | null
           created_at: string
-          finished_at: string | null
+          distance_m: number | null
+          duration_sec: number | null
+          external_id: string
           id: string
-          notes: string | null
+          name: string
+          provider: string
+          raw_data: Json | null
           started_at: string
-          status: Database["public"]["Enums"]["session_status"]
-          total_volume: number | null
-          updated_at: string
-          workout_id: string
+          user_id: string
         }
         Insert: {
-          aluno_id: string
+          activity_type?: string | null
+          calories?: number | null
           created_at?: string
-          finished_at?: string | null
+          distance_m?: number | null
+          duration_sec?: number | null
+          external_id: string
           id?: string
-          notes?: string | null
-          started_at?: string
-          status?: Database["public"]["Enums"]["session_status"]
-          total_volume?: number | null
-          updated_at?: string
-          workout_id: string
+          name: string
+          provider: string
+          raw_data?: Json | null
+          started_at: string
+          user_id: string
         }
         Update: {
-          aluno_id?: string
+          activity_type?: string | null
+          calories?: number | null
           created_at?: string
-          finished_at?: string | null
+          distance_m?: number | null
+          duration_sec?: number | null
+          external_id?: string
           id?: string
-          notes?: string | null
+          name?: string
+          provider?: string
+          raw_data?: Json | null
           started_at?: string
-          status?: Database["public"]["Enums"]["session_status"]
-          total_volume?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wearable_connections: {
+        Row: {
+          access_token: string | null
+          created_at: string
+          external_user_id: string | null
+          id: string
+          last_sync_at: string | null
+          metadata: Json
+          provider: string
+          refresh_token: string | null
+          scopes: string[] | null
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          created_at?: string
+          external_user_id?: string | null
+          id?: string
+          last_sync_at?: string | null
+          metadata?: Json
+          provider: string
+          refresh_token?: string | null
+          scopes?: string[] | null
+          token_expires_at?: string | null
           updated_at?: string
-          workout_id?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string | null
+          created_at?: string
+          external_user_id?: string | null
+          id?: string
+          last_sync_at?: string | null
+          metadata?: Json
+          provider?: string
+          refresh_token?: string | null
+          scopes?: string[] | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wearable_daily_metrics: {
+        Row: {
+          active_calories_kcal: number | null
+          aluno_id: string
+          avg_heart_rate_bpm: number | null
+          created_at: string
+          distance_meters: number | null
+          exercise_minutes: number | null
+          id: string
+          metric_date: string
+          resting_heart_rate_bpm: number | null
+          sleep_minutes: number | null
+          source_platform: string | null
+          steps: number | null
+          synced_at: string
+          weight_kg: number | null
+        }
+        Insert: {
+          active_calories_kcal?: number | null
+          aluno_id: string
+          avg_heart_rate_bpm?: number | null
+          created_at?: string
+          distance_meters?: number | null
+          exercise_minutes?: number | null
+          id?: string
+          metric_date: string
+          resting_heart_rate_bpm?: number | null
+          sleep_minutes?: number | null
+          source_platform?: string | null
+          steps?: number | null
+          synced_at?: string
+          weight_kg?: number | null
+        }
+        Update: {
+          active_calories_kcal?: number | null
+          aluno_id?: string
+          avg_heart_rate_bpm?: number | null
+          created_at?: string
+          distance_meters?: number | null
+          exercise_minutes?: number | null
+          id?: string
+          metric_date?: string
+          resting_heart_rate_bpm?: number | null
+          sleep_minutes?: number | null
+          source_platform?: string | null
+          steps?: number | null
+          synced_at?: string
+          weight_kg?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "workout_sessions_workout_id_fkey"
-            columns: ["workout_id"]
+            foreignKeyName: "wearable_daily_metrics_aluno_id_fkey"
+            columns: ["aluno_id"]
             isOneToOne: false
-            referencedRelation: "workouts"
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wearable_health_settings: {
+        Row: {
+          aluno_id: string
+          connected_at: string | null
+          created_at: string
+          last_synced_at: string | null
+          permissions: Json
+          platform: string | null
+          sync_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          aluno_id: string
+          connected_at?: string | null
+          created_at?: string
+          last_synced_at?: string | null
+          permissions?: Json
+          platform?: string | null
+          sync_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          aluno_id?: string
+          connected_at?: string | null
+          created_at?: string
+          last_synced_at?: string | null
+          permissions?: Json
+          platform?: string | null
+          sync_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wearable_health_settings_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1053,6 +1706,53 @@ export type Database = {
         }
         Relationships: []
       }
+      workout_sessions: {
+        Row: {
+          aluno_id: string
+          created_at: string
+          finished_at: string | null
+          id: string
+          notes: string | null
+          started_at: string
+          status: Database["public"]["Enums"]["session_status"]
+          total_volume: number | null
+          updated_at: string
+          workout_id: string
+        }
+        Insert: {
+          aluno_id: string
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          notes?: string | null
+          started_at?: string
+          status?: Database["public"]["Enums"]["session_status"]
+          total_volume?: number | null
+          updated_at?: string
+          workout_id: string
+        }
+        Update: {
+          aluno_id?: string
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          notes?: string | null
+          started_at?: string
+          status?: Database["public"]["Enums"]["session_status"]
+          total_volume?: number | null
+          updated_at?: string
+          workout_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_sessions_workout_id_fkey"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "workouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workouts: {
         Row: {
           aluno_id: string | null
@@ -1113,10 +1813,52 @@ export type Database = {
     Functions: {
       auto_close_stale_sessions: { Args: never; Returns: number }
       can_see_feed: { Args: { _personal_id: string }; Returns: boolean }
-      complete_student_invitation: { Args: { _token: string }; Returns: undefined }
+      clone_diet_plan: {
+        Args: {
+          _as_template?: boolean
+          _source_plan_id: string
+          _target_aluno_id?: string
+          _template_name?: string
+        }
+        Returns: string
+      }
+      clone_workout_routine: {
+        Args: {
+          _ends_at?: string
+          _name?: string
+          _source_routine_id: string
+          _starts_at?: string
+          _target_aluno_id: string
+        }
+        Returns: string
+      }
+      complete_appointment: {
+        Args: { _appointment_id: string }
+        Returns: string
+      }
+      complete_student_invitation: {
+        Args: { _token: string }
+        Returns: undefined
+      }
       count_my_students: { Args: never; Returns: number }
+      create_student_appointment: {
+        Args: {
+          _aluno_id: string
+          _duration_minutes?: number
+          _kind?: Database["public"]["Enums"]["appointment_kind"]
+          _notes?: string
+          _recurrence_days?: number
+          _scheduled_at: string
+        }
+        Returns: string
+      }
       create_student_invitation: {
-        Args: { _email: string; _full_name?: string | null }
+        Args: {
+          _email: string
+          _follow_up_interval_days?: number
+          _follow_up_kind?: Database["public"]["Enums"]["appointment_kind"]
+          _full_name?: string
+        }
         Returns: {
           invitation_id: string
           invite_url: string
@@ -1128,11 +1870,13 @@ export type Database = {
         Returns: {
           email: string
           expires_at: string
-          full_name: string | null
+          follow_up_interval_days: number
+          follow_up_kind: Database["public"]["Enums"]["appointment_kind"]
+          full_name: string
           id: string
           is_nutritionist: boolean
           is_personal_trainer: boolean
-          personal_name: string | null
+          personal_name: string
           status: string
         }[]
       }
@@ -1140,13 +1884,23 @@ export type Database = {
         Args: never
         Returns: {
           created_at: string
-          full_name: string | null
+          full_name: string
           id: string
         }[]
       }
       get_primary_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      get_profile_personal_id: { Args: { _user_id: string }; Returns: string }
+      get_student_profile: {
+        Args: { _aluno_id: string }
+        Returns: {
+          created_at: string
+          full_name: string
+          id: string
+          personal_id: string
+        }[]
       }
       has_role: {
         Args: {
@@ -1155,32 +1909,31 @@ export type Database = {
         }
         Returns: boolean
       }
-      repair_my_student_link: { Args: never; Returns: undefined }
+      is_professional_user: { Args: { _user_id: string }; Returns: boolean }
+      mark_overdue_invoices: { Args: never; Returns: number }
       refresh_workout_routine_statuses: { Args: never; Returns: undefined }
-      clone_workout_routine: {
-        Args: {
-          _source_routine_id: string
-          _target_aluno_id: string
-          _name?: string | null
-          _starts_at?: string | null
-          _ends_at?: string | null
-        }
-        Returns: string
+      repair_my_student_link: { Args: never; Returns: undefined }
+      student_linked_to_personal: {
+        Args: { _aluno_id: string; _personal_id?: string }
+        Returns: boolean
       }
-      complete_appointment: {
-        Args: { _appointment_id: string }
-        Returns: string
-      }
-      create_student_appointment: {
+      sync_diet_from_anamnesis: { Args: { _aluno_id: string }; Returns: string }
+      sync_student_follow_up_plan: {
         Args: {
           _aluno_id: string
-          _scheduled_at: string
-          _duration_minutes?: number
+          _interval_days: number
           _kind?: Database["public"]["Enums"]["appointment_kind"]
-          _notes?: string | null
-          _recurrence_days?: number | null
+          _personal_id: string
         }
-        Returns: string
+        Returns: undefined
+      }
+      update_student_follow_up_plan: {
+        Args: {
+          _aluno_id: string
+          _interval_days: number
+          _kind?: Database["public"]["Enums"]["appointment_kind"]
+        }
+        Returns: undefined
       }
     }
     Enums: {
@@ -1188,8 +1941,12 @@ export type Database = {
       app_role: "admin" | "personal" | "aluno"
       appointment_kind: "treino" | "retorno" | "avaliacao" | "consulta"
       appointment_status: "scheduled" | "completed" | "cancelled"
-      fitness_goal: "perda_peso" | "ganho_massa" | "definicao" | "manutencao" | "performance"
-      professional_registry: "cref" | "crn"
+      fitness_goal:
+        | "perda_peso"
+        | "ganho_massa"
+        | "definicao"
+        | "manutencao"
+        | "performance"
       meal_slot:
         | "cafe"
         | "lanche_manha"
@@ -1198,6 +1955,7 @@ export type Database = {
         | "jantar"
         | "ceia"
       post_kind: "treino" | "dieta" | "evolucao" | "livre"
+      professional_registry: "cref" | "crn"
       routine_kind: "treinos" | "aerobico"
       routine_level: "adaptacao" | "iniciante" | "intermediario" | "avancado"
       routine_schedule: "por_letra" | "por_dia_semana"
@@ -1336,9 +2094,22 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
+      activity_level: ["sedentario", "leve", "moderado", "intenso", "atleta"],
       app_role: ["admin", "personal", "aluno"],
+      appointment_kind: ["treino", "retorno", "avaliacao", "consulta"],
+      appointment_status: ["scheduled", "completed", "cancelled"],
+      fitness_goal: [
+        "perda_peso",
+        "ganho_massa",
+        "definicao",
+        "manutencao",
+        "performance",
+      ],
       meal_slot: [
         "cafe",
         "lanche_manha",
@@ -1348,6 +2119,12 @@ export const Constants = {
         "ceia",
       ],
       post_kind: ["treino", "dieta", "evolucao", "livre"],
+      professional_registry: ["cref", "crn"],
+      routine_kind: ["treinos", "aerobico"],
+      routine_level: ["adaptacao", "iniciante", "intermediario", "avancado"],
+      routine_schedule: ["por_letra", "por_dia_semana"],
+      routine_status: ["scheduled", "active", "archived"],
+      routine_target_sex: ["masculino", "feminino", "unissex"],
       session_status: ["em_andamento", "concluido", "encerrado_auto"],
       set_type: ["normal", "drop", "falha", "rest_pause"],
       workout_category: [

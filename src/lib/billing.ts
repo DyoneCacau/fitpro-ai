@@ -55,7 +55,7 @@ export function parseCurrencyInput(value: string): number {
 
 export async function fetchBillingPlans(personalId: string): Promise<BillingPlan[]> {
   const { data, error } = await supabase
-    .from("billing_plans" as "profiles")
+    .from("billing_plans")
     .select("*")
     .eq("personal_id", personalId)
     .order("created_at", { ascending: false });
@@ -68,7 +68,7 @@ export async function createBillingPlan(
   input: { name: string; amount_cents: number; billing_cycle: BillingPlan["billing_cycle"] },
 ): Promise<BillingPlan> {
   const { data, error } = await supabase
-    .from("billing_plans" as "profiles")
+    .from("billing_plans")
     .insert({ personal_id: personalId, ...input })
     .select("*")
     .single();
@@ -81,7 +81,7 @@ export async function fetchStudentSubscriptions(
   alunoId?: string,
 ): Promise<StudentSubscription[]> {
   let q = supabase
-    .from("student_subscriptions" as "profiles")
+    .from("student_subscriptions")
     .select("*")
     .eq("personal_id", personalId)
     .order("created_at", { ascending: false });
@@ -100,7 +100,7 @@ export async function createStudentSubscription(input: {
   notes?: string | null;
 }): Promise<StudentSubscription> {
   const { data, error } = await supabase
-    .from("student_subscriptions" as "profiles")
+    .from("student_subscriptions")
     .insert({ ...input, status: "active" })
     .select("*")
     .single();
@@ -113,7 +113,7 @@ export async function fetchInvoices(
   opts?: { alunoId?: string; status?: Invoice["status"] },
 ): Promise<Invoice[]> {
   let q = supabase
-    .from("invoices" as "profiles")
+    .from("invoices")
     .select("*")
     .eq("personal_id", personalId)
     .order("due_date", { ascending: false });
@@ -133,7 +133,7 @@ export async function createInvoice(input: {
   notes?: string | null;
 }): Promise<Invoice> {
   const { data, error } = await supabase
-    .from("invoices" as "profiles")
+    .from("invoices")
     .insert({ ...input, status: "pending" })
     .select("*")
     .single();
@@ -154,7 +154,7 @@ export async function markInvoicePaid(
   paymentMethod?: string,
 ): Promise<void> {
   const { data, error } = await supabase
-    .from("invoices" as "profiles")
+    .from("invoices")
     .update({
       status: "paid",
       paid_at: new Date().toISOString(),
@@ -175,7 +175,7 @@ export async function markInvoicePaid(
 }
 
 export async function refreshOverdueInvoices(): Promise<void> {
-  await supabase.rpc("mark_overdue_invoices" as never);
+  await supabase.rpc("mark_overdue_invoices");
 }
 
 export async function fetchBillingSummary(personalId: string) {

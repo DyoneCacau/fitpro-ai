@@ -81,7 +81,7 @@ export async function fetchProfessionalDashboard(
     fetchStudentSubscriptions(personalId),
     fetchUpcomingAppointments(personalId, 30),
     supabase
-      .from("billing_plans" as "profiles")
+      .from("billing_plans")
       .select("*", { count: "exact", head: true })
       .eq("personal_id", personalId),
   ]);

@@ -1,4 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+
+type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
 
 export type StudentRange = "ate_25" | "26_50" | "51_100" | "mais_100";
 export type RevenueRange = "ate_5k" | "5k_10k" | "10k_30k" | "acima_30k";
@@ -117,7 +120,7 @@ export async function fetchOnboardingState(userId: string): Promise<OnboardingSt
       .eq("id", userId)
       .maybeSingle(),
     supabase
-      .from("professional_subscriptions" as "profiles")
+      .from("professional_subscriptions")
       .select("*")
       .eq("professional_id", userId)
       .maybeSingle(),
@@ -139,11 +142,11 @@ export async function fetchOnboardingState(userId: string): Promise<OnboardingSt
 
 export async function saveOnboardingProfile(
   userId: string,
-  fields: Partial<ProfileOnboardingRow>,
+  fields: ProfileUpdate,
 ): Promise<void> {
   const { error } = await supabase
     .from("profiles")
-    .update(fields as never)
+    .update(fields)
     .eq("id", userId);
   if (error) throw error;
 }
@@ -155,7 +158,7 @@ export async function selectProfessionalPlan(
   const trialDays = input.trialDays ?? 7;
   const trialEnds = new Date(Date.now() + trialDays * 86400000).toISOString();
   const { data, error } = await supabase
-    .from("professional_subscriptions" as "profiles")
+    .from("professional_subscriptions")
     .upsert(
       {
         professional_id: userId,
@@ -165,7 +168,7 @@ export async function selectProfessionalPlan(
         status: "trial",
         trial_ends_at: trialEnds,
         current_period_end: trialEnds,
-      } as never,
+      },
       { onConflict: "professional_id" },
     )
     .select("*")
