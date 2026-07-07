@@ -42,7 +42,7 @@ export async function fetchProfessionalInsights(personalId: string): Promise<Pro
   const [students, billing, followUps, workoutsRes, dietsRes, anamnesisRes] = await Promise.all([
     fetchMyStudents(),
     fetchBillingSummary(personalId),
-    fetchFollowUpAlerts(personalId),
+    fetchFollowUpAlerts(personalId, new Map<string, string>()),
     supabase
       .from("workouts")
       .select("*", { count: "exact", head: true })
