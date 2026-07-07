@@ -201,7 +201,7 @@ function Perfil() {
               <div className="space-y-2">
                 {isProfessional && (
                   <>
-                    <MenuLink to="/agenda" icon={CalendarClock} label="Agenda e agendamentos" />
+                    <MenuLink to="/clientes" icon={CalendarClock} label="Agenda e clientes" />
                     <MenuLink
                       to="/perfil"
                       search={{ tab: "alunos" }}

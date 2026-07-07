@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { HealthDashboardCard } from "@/components/student/wearables/HealthDashboardCard";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ClipboardList, FlaskConical, FolderOpen, Loader2, Pencil, Ruler, Trash2 } from "lucide-react";
 import { AnthropometricForm } from "@/components/assessment/AnthropometricForm";
@@ -49,6 +50,13 @@ export function StudentTrackingPanel({ alunoId, personalId, studentName }: Props
 
   return (
     <div className="space-y-8">
+      <section>
+        <h3 className="text-sm font-bold text-foreground mb-3">Atividade e wearables</h3>
+        <p className="text-xs text-muted-foreground mb-3">
+          Passos, calorias e treinos sincronizados pelo aluno (Strava / relógio).
+        </p>
+        <HealthDashboardCard userId={alunoId} readOnly title={`Atividade · ${studentName ?? "Aluno"}`} />
+      </section>
       <AssessmentsSection
         alunoId={alunoId}
         personalId={personalId}

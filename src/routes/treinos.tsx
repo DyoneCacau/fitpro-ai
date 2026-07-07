@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
+  ClipboardList,
   Dumbbell,
   Loader2,
 } from "lucide-react";
@@ -13,6 +14,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { ProfessionalStudentWorkspace } from "@/components/professional/ProfessionalStudentWorkspace";
 import { StudentWorkoutsPanel } from "@/components/professional/StudentWorkoutsPanel";
 import { WorkoutTemplateLibrary } from "@/components/professional/WorkoutTemplateLibrary";
+import { PremiumCollapsible } from "@/components/student/ui/PremiumCollapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { refreshRoutineStatuses } from "@/lib/workout-routines";
@@ -96,6 +98,22 @@ function ProfessionalTreinosPage() {
   );
 }
 
+type StudentWorkout = {
+  id: string;
+  letter: string;
+  title: string;
+  muscles: string | null;
+  category: string | null;
+  estimated_minutes: number | null;
+  exercises: { count: number }[] | null;
+  workout_routines: {
+    name: string;
+    status: string;
+    starts_at: string | null;
+    ends_at: string | null;
+  } | null;
+};
+
 function StudentTreinosPage() {
   const { user } = useAuth();
   const router = useRouter();
@@ -114,14 +132,17 @@ function StudentTreinosPage() {
         .eq("is_active", true)
         .order("letter");
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as StudentWorkout[];
     },
   });
 
+  const routineName = workouts[0]?.workout_routines?.name;
+  const exerciseCount = (w: StudentWorkout) => w.exercises?.[0]?.count ?? 0;
+
   return (
     <AppShell>
-      <div className="min-h-screen bg-background">
-        <header className="bg-gradient-hero px-4 pt-10 pb-6 text-center relative border-b border-border">
+      <div className="min-h-screen bg-background pb-8">
+        <header className="sticky top-0 z-20 bg-gradient-hero px-4 pt-10 pb-4 border-b border-border">
           <button
             type="button"
             onClick={() => router.navigate({ to: "/" })}
@@ -129,23 +150,23 @@ function StudentTreinosPage() {
           >
             <ChevronLeft className="size-5 text-foreground" />
           </button>
-          <div className="flex items-center justify-center gap-2">
-            <Dumbbell className="size-6 text-primary" />
-            <span className="font-black tracking-tight text-foreground">
-              FitPro <span className="text-primary">AI</span>
-            </span>
-          </div>
-          <p className="mt-3 text-sm font-medium text-muted-foreground">Minha rotina de treinos</p>
+          <p className="text-center text-base font-black text-foreground">Meus treinos</p>
+          {routineName && (
+            <p className="text-center text-xs text-muted-foreground mt-1 truncate px-10">
+              {routineName}
+            </p>
+          )}
         </header>
 
-        <div className="px-4 py-5 space-y-3">
+        <div className="px-3 pt-4 space-y-4">
           {isLoading && (
-            <div className="flex justify-center py-12">
+            <div className="flex justify-center py-16">
               <Loader2 className="size-8 animate-spin text-primary" />
             </div>
           )}
+
           {!isLoading && workouts.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-border bg-card/40 p-8 text-center">
+            <div className="rounded-3xl border border-dashed border-border bg-card/40 p-10 text-center mx-1">
               <Dumbbell className="size-10 text-primary mx-auto mb-3" />
               <p className="text-sm font-semibold text-foreground">Nenhum treino prescrito</p>
               <p className="text-xs text-muted-foreground mt-1">
@@ -153,31 +174,52 @@ function StudentTreinosPage() {
               </p>
             </div>
           )}
-          {workouts.map((w) => (
-            <Link
-              key={w.id}
-              to="/treino/$id"
-              params={{ id: w.id }}
-              className="block rounded-2xl border border-border bg-card p-4 shadow-card active:scale-[0.99] transition-transform"
-            >
-              <div className="flex items-center gap-3">
-                <div className="size-12 rounded-xl bg-gradient-primary text-primary-foreground flex items-center justify-center text-xl font-black shadow-glow">
-                  {w.letter}
+
+          {!isLoading && workouts.length > 0 && (
+            <>
+              <div className="mx-1 rounded-3xl border border-border bg-card/50 overflow-hidden shadow-card">
+                <div className="p-3 border-b border-border">
+                  <PremiumCollapsible title="Observações" icon={ClipboardList}>
+                    <p className="text-xs leading-relaxed">
+                      Toque em um treino para ver os exercícios e iniciar a sessão. Marque as séries
+                      durante o treino para acompanhar seu progresso.
+                    </p>
+                  </PremiumCollapsible>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-foreground truncate">{w.title}</p>
-                  {w.muscles && (
-                    <p className="text-xs text-muted-foreground truncate mt-0.5">{w.muscles}</p>
-                  )}
-                  <p className="text-[11px] text-primary font-semibold mt-1">
-                    {(w.exercises as { count: number }[] | null)?.[0]?.count ?? 0} exercícios ·{" "}
-                    {w.estimated_minutes ?? 60} min
-                  </p>
+
+                <div className="divide-y divide-border">
+                  {workouts.map((w) => (
+                    <Link
+                      key={w.id}
+                      to="/treino/$id"
+                      params={{ id: w.id }}
+                      className="flex items-center gap-3 px-4 py-4 active:bg-muted/30 transition-colors"
+                    >
+                      <div className="size-10 shrink-0 rounded-xl bg-primary/15 text-primary flex items-center justify-center text-lg font-black">
+                        {w.letter}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[15px] font-bold text-foreground leading-snug truncate">
+                          {w.title}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                          {w.muscles?.split(/[,/]/)[0]?.trim() ?? w.category ?? "Treino"}
+                        </p>
+                        <p className="text-[11px] text-primary font-semibold mt-1">
+                          {exerciseCount(w)} exercícios · {w.estimated_minutes ?? 60} min
+                        </p>
+                      </div>
+                      <ChevronRight className="size-5 text-muted-foreground shrink-0" />
+                    </Link>
+                  ))}
                 </div>
-                <ChevronRight className="size-5 text-primary shrink-0" />
               </div>
-            </Link>
-          ))}
+
+              <p className="text-center text-[11px] text-muted-foreground px-4">
+                {workouts.length} treino{workouts.length !== 1 ? "s" : ""} na sua rotina atual
+              </p>
+            </>
+          )}
         </div>
       </div>
     </AppShell>

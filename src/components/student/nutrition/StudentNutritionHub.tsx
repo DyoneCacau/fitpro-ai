@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Apple, BookOpen, ChefHat, ChevronDown, Repeat2, ShoppingCart } from "lucide-react";
+import { Apple, BookOpen, ChefHat, ChevronDown, ClipboardList, Repeat2, ShoppingCart } from "lucide-react";
 import { EmptyState, SubPageHeader } from "@/components/student/FeatureHub";
+import { PremiumCollapsible } from "@/components/student/ui/PremiumCollapsible";
 import { DietPlanToolbar } from "@/components/diet/DietPlanToolbar";
 import { MealPlanCard } from "@/components/diet/MealPlanCard";
 import { useAuth } from "@/hooks/use-auth";
@@ -115,14 +116,19 @@ function MealPlanView({
   return (
     <>
       <header className="bg-gradient-hero px-5 pt-12 pb-5">
-        <h1 className="text-2xl font-bold text-foreground">Dieta</h1>
-        <p className="text-sm font-medium text-foreground/90 mt-1">{plan.name}</p>
+        <h1 className="text-xl font-black text-foreground">Plano Alimentar</h1>
+        <p className="text-sm font-semibold text-primary mt-1 truncate">{plan.name}</p>
         <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-          Toque no ✓ para marcar a refeição como realizada hoje. Expanda cada card para ver os detalhes.
+          Minhas refeições · marque o ✓ quando realizar · expanda para ver detalhes
         </p>
       </header>
 
-      <div className="px-5 py-4 space-y-5 pb-8">
+      <div className="px-5 py-4 space-y-4 pb-8">
+        {plan.notes?.trim() && (
+          <PremiumCollapsible title="Observações" icon={ClipboardList}>
+            <p className="whitespace-pre-wrap leading-relaxed">{plan.notes.trim()}</p>
+          </PremiumCollapsible>
+        )}
         {meals.length > 0 && (
           <div className="rounded-2xl border border-border bg-card p-4">
             <div className="flex items-end justify-between gap-3 mb-3">
@@ -186,7 +192,7 @@ function MealPlanView({
         />
 
         <div className="space-y-3">
-          <h2 className="text-sm font-bold text-primary">Refeições</h2>
+          <h2 className="text-sm font-black text-foreground">Minhas refeições</h2>
           {meals.length === 0 ? (
             <EmptyState
               icon={Apple}
@@ -194,10 +200,12 @@ function MealPlanView({
               description="Seu plano ainda não possui refeições cadastradas."
             />
           ) : (
-            meals.map((m) => (
+            meals.map((m, idx) => (
               <MealPlanCard
                 key={m.id}
                 meal={m}
+                mealIndex={idx}
+                planSubstitutions={substitutions}
                 completed={completedMealIds.has(m.id)}
                 completing={
                   toggleCompletion.isPending && toggleCompletion.variables?.mealId === m.id

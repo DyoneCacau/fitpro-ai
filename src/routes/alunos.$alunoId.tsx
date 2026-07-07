@@ -99,29 +99,31 @@ function StudentDetailPage() {
         </div>
       </header>
 
-      <div className="px-5 pt-4">
-        <div className="grid grid-cols-5 gap-1 rounded-2xl bg-card border border-border p-1 overflow-x-auto">
-          {tabs.map((t) => {
-            const Icon = t.icon;
-            const active = tab === t.id;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setTab(t.id)}
-                className={`rounded-xl py-2 text-[11px] font-bold flex flex-col items-center gap-1 ${
-                  active ? "bg-gradient-primary text-primary-foreground shadow-glow" : "text-muted-foreground"
-                }`}
-              >
-                <Icon className="size-4" />
-                {t.label}
-              </button>
-            );
-          })}
+      <div className="md:flex md:items-start md:gap-8 md:px-8 md:pt-4">
+        <div className="px-5 pt-4 md:px-0 md:pt-0 md:w-56 md:shrink-0">
+          <div className="grid grid-cols-5 gap-1 rounded-2xl bg-card border border-border p-1 overflow-x-auto md:grid-cols-1 md:overflow-visible md:border-0 md:bg-transparent md:p-0 md:gap-1.5">
+            {tabs.map((t) => {
+              const Icon = t.icon;
+              const active = tab === t.id;
+              const label = t.label === "Acomp." ? "Acompanhamento" : t.label;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setTab(t.id)}
+                  className={`rounded-xl py-2 md:py-2.5 md:px-3 text-[11px] md:text-sm font-bold flex flex-col md:flex-row items-center gap-1 md:gap-2 md:justify-start md:w-full ${
+                    active ? "bg-gradient-primary text-primary-foreground shadow-glow" : "text-muted-foreground md:hover:bg-accent"
+                  }`}
+                >
+                  <Icon className="size-4 shrink-0" />
+                  <span>{label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
 
-      <section className="px-5 py-5 pb-10">
+        <section className="flex-1 min-w-0 px-5 py-5 pb-10 md:px-0 md:py-0 md:pb-10">
         {tab === "anamnese" && (
           <StudentAnamnesisPanel
             alunoId={alunoId}
@@ -145,7 +147,8 @@ function StudentDetailPage() {
             studentName={student.full_name ?? undefined}
           />
         )}
-      </section>
+        </section>
+      </div>
 
       {openSchedule && (
         <QuickAppointmentModal

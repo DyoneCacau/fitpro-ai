@@ -6,13 +6,14 @@ import { WEARABLE_CONNECTIONS_KEY, WEARABLE_ACTIVITIES_KEY } from "@/lib/wearabl
 
 export const HEALTH_DASHBOARD_KEY = "health-dashboard";
 
-export function useHealthDashboard() {
+export function useHealthDashboard(subjectUserId?: string) {
   const { user } = useAuth();
+  const userId = subjectUserId ?? user?.id;
 
   return useQuery({
-    queryKey: [HEALTH_DASHBOARD_KEY, user?.id],
-    enabled: !!user?.id,
-    queryFn: () => buildHealthDashboard(user!.id),
+    queryKey: [HEALTH_DASHBOARD_KEY, userId],
+    enabled: !!userId,
+    queryFn: () => buildHealthDashboard(userId!),
     staleTime: 60_000,
   });
 }

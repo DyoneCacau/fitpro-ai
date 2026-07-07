@@ -6,8 +6,18 @@ import { cn } from "@/lib/utils";
 
 const WEEK_LABELS = ["S", "T", "Q", "Q", "S", "S", "D"] as const;
 
-export function HealthDashboardCard({ compact = false }: { compact?: boolean }) {
-  const { data, isLoading } = useHealthDashboard();
+export function HealthDashboardCard({
+  compact = false,
+  userId,
+  readOnly = false,
+  title,
+}: {
+  compact?: boolean;
+  userId?: string;
+  readOnly?: boolean;
+  title?: string;
+}) {
+  const { data, isLoading } = useHealthDashboard(userId);
   const sync = useSyncWearables();
   const todayIndex = (new Date().getDay() + 6) % 7;
 
@@ -26,19 +36,21 @@ export function HealthDashboardCard({ compact = false }: { compact?: boolean }) 
     <div className="rounded-2xl border border-border bg-card p-4 shadow-card space-y-4">
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-bold text-foreground">
-          {compact ? "Atividade hoje" : "Painel de saúde"}
+          {title ?? (compact ? "Atividade hoje" : "Painel de saúde")}
         </p>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="size-8 shrink-0"
-          disabled={sync.isPending}
-          onClick={() => sync.mutate()}
-          aria-label="Sincronizar wearables"
-        >
-          <RefreshCw className={cn("size-4", sync.isPending && "animate-spin")} />
-        </Button>
+        {!readOnly && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-8 shrink-0"
+            disabled={sync.isPending}
+            onClick={() => sync.mutate()}
+            aria-label="Sincronizar wearables"
+          >
+            <RefreshCw className={cn("size-4", sync.isPending && "animate-spin")} />
+          </Button>
+        )}
       </div>
 
       <div className={cn("grid gap-3", compact ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-4")}>
@@ -111,13 +123,19 @@ export function HealthDashboardCard({ compact = false }: { compact?: boolean }) 
         </div>
       )}
 
-      {!hasWearable && (
+      {!readOnly && !hasWearable && (
         <Link
           to="/integracoes"
           className="block text-center text-xs font-semibold text-primary hover:underline"
         >
           Conectar relógio ou Strava →
         </Link>
+      )}
+
+      {readOnly && !hasWearable && (
+        <p className="text-center text-xs text-muted-foreground">
+          O aluno ainda não conectou relógio ou Strava.
+        </p>
       )}
     </div>
   );

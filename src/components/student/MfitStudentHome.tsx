@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { CalendarClock, Dumbbell, Apple, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { StudentHomeHero } from "@/components/student/home/StudentHomeHero";
 import { HealthDashboardCard } from "@/components/student/wearables/HealthDashboardCard";
 import { useDisplayName } from "@/hooks/use-display-name";
 import { greetingForNow } from "@/lib/workout-display";
@@ -42,10 +43,9 @@ export function MfitStudentHome() {
         </p>
       </div>
 
-      <div className="px-4 pb-6">
-        <div className="-mt-2">
-          <HealthDashboardCard compact />
-        </div>
+      <div className="px-4 pb-6 space-y-4">
+        <StudentHomeHero />
+        <HealthDashboardCard compact />
 
         <div className="mt-4 grid grid-cols-2 gap-3">
           {MENU.map((item) => {

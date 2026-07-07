@@ -24,7 +24,7 @@ export function ProfessionalStudentWorkspace({ subtitle, children }: Props) {
         onSelect={selectStudent}
       />
       {!isLoading && selectedId && selected && (
-        <div className="px-5 py-5 pb-10">
+        <div className="px-5 py-5 pb-10 md:px-8">
           {children({ alunoId: selectedId, personalId: user.id })}
         </div>
       )}

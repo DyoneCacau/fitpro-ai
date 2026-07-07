@@ -10,13 +10,20 @@ import {
   FlaskConical,
   FolderOpen,
   Pill,
+  Percent,
   Ruler,
   Scale,
   Stethoscope,
   TrendingUp,
   Watch,
 } from "lucide-react";
-import { Line, LineChart, XAxis, YAxis, CartesianGrid } from "recharts";
+import {
+  EvolutionMetricCard,
+  filterByPeriod,
+  PERIOD_OPTIONS,
+  type PeriodFilter,
+} from "@/components/student/evolution/EvolutionMetricCard";
+import { PeriodPills } from "@/components/student/ui/PremiumCollapsible";
 import { AssessmentDetailView } from "@/components/assessment/AssessmentDetailView";
 import {
   ComparativeReportView,
@@ -26,7 +33,6 @@ import { ExportAssessmentReportButton } from "@/components/assessment/ExportAsse
 import { HealthDashboardCard } from "@/components/student/wearables/HealthDashboardCard";
 import { WearableConnectPanel } from "@/components/student/wearables/WearableConnectPanel";
 import { EmptyState, FeatureHubCard, SubPageHeader } from "@/components/student/FeatureHub";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { useAuth } from "@/hooks/use-auth";
 import {
   assessmentOrdinal,
@@ -38,7 +44,6 @@ import {
 import type { Sex } from "@/lib/nutrition-calculator";
 import { fetchStudentActiveDietPlan, sortSupplements } from "@/lib/diet";
 import {
-  buildAssessmentChartData,
   fetchStudentAssessments,
   fetchStudentLabExams,
   fetchStudentMaterials,
@@ -78,8 +83,8 @@ export function StudentTrackingHub({ embedded = false }: { embedded?: boolean })
           />
           <FeatureHubCard
             icon={BarChart3}
-            title="Gráficos Antropométricos"
-            description="Visualize os gráficos obtidos a partir de suas avaliações."
+            title="Evolução"
+            description="Peso, gordura e massa magra ao longo do tempo."
             onClick={() => setView("graficos")}
           />
           <FeatureHubCard
@@ -392,56 +397,60 @@ function ChartsView({
   loading: boolean;
   onBack: () => void;
 }) {
-  const chartData = buildAssessmentChartData(assessments);
+  const [period, setPeriod] = useState<PeriodFilter>("all");
+  const sorted = sortAssessmentsOldestFirst(assessments);
+
+  const pesoData = filterByPeriod(
+    sorted
+      .filter((a) => a.weight_kg != null)
+      .map((a) => ({
+        date: a.assessed_at.slice(0, 10),
+        value: a.weight_kg!,
+        label: formatAssessmentDate(a.assessed_at),
+      })),
+    period,
+  );
+
+  const gorduraData = filterByPeriod(
+    sorted
+      .filter((a) => a.body_fat_pct != null)
+      .map((a) => ({
+        date: a.assessed_at.slice(0, 10),
+        value: a.body_fat_pct!,
+        label: formatAssessmentDate(a.assessed_at),
+      })),
+    period,
+  );
+
+  const massaData = filterByPeriod(
+    sorted
+      .filter((a) => a.lean_mass_kg != null)
+      .map((a) => ({
+        date: a.assessed_at.slice(0, 10),
+        value: a.lean_mass_kg!,
+        label: formatAssessmentDate(a.assessed_at),
+      })),
+    period,
+  );
 
   return (
     <>
-      <SubPageHeader title="Gráficos Antropométricos" onBack={onBack} />
+      <SubPageHeader title="Evolução" subtitle="Acompanhe seu progresso" onBack={onBack} />
       <div className="px-5 py-5 pb-8 space-y-5">
+        <PeriodPills options={PERIOD_OPTIONS} value={period} onChange={setPeriod} />
         {loading && <p className="text-sm text-muted-foreground text-center">Carregando…</p>}
-        {!loading && chartData.length < 2 && (
-          <EmptyState icon={BarChart3} title="Dados insuficientes" description="São necessárias ao menos duas avaliações para exibir gráficos." />
+        {!loading && pesoData.length === 0 && gorduraData.length === 0 && (
+          <EmptyState
+            icon={BarChart3}
+            title="Dados insuficientes"
+            description="São necessárias avaliações para exibir a evolução."
+          />
         )}
-        {chartData.length >= 2 && (
-          <>
-            <ChartBlock title="Peso (kg)" data={chartData} dataKey="peso" />
-            <ChartBlock title="% Gordura" data={chartData} dataKey="gordura" />
-            <ChartBlock title="Massa magra (kg)" data={chartData} dataKey="massaMagra" />
-          </>
-        )}
+        <EvolutionMetricCard title="Peso" unit="kg" icon={Scale} data={pesoData} />
+        <EvolutionMetricCard title="% Gordura corporal" unit="%" icon={Percent} data={gorduraData} />
+        <EvolutionMetricCard title="Massa magra" unit="kg" icon={Ruler} data={massaData} />
       </div>
     </>
-  );
-}
-
-function ChartBlock({
-  title,
-  data,
-  dataKey,
-}: {
-  title: string;
-  data: ReturnType<typeof buildAssessmentChartData>;
-  dataKey: "peso" | "gordura" | "massaMagra";
-}) {
-  const filtered = data.filter((d) => d[dataKey] != null);
-  if (filtered.length < 2) return null;
-
-  return (
-    <div className="rounded-2xl border border-border bg-card p-4">
-      <p className="text-sm font-bold mb-3">{title}</p>
-      <ChartContainer
-        config={{ [dataKey]: { label: title, color: "hsl(var(--primary))" } }}
-        className="h-[200px] w-full aspect-auto"
-      >
-        <LineChart data={filtered}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-          <YAxis tick={{ fontSize: 10 }} width={32} />
-          <ChartTooltip content={<ChartTooltipContent />} />
-          <Line type="monotone" dataKey={dataKey} stroke={`var(--color-${dataKey})`} strokeWidth={2} dot />
-        </LineChart>
-      </ChartContainer>
-    </div>
   );
 }
 

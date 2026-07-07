@@ -97,7 +97,7 @@ export function StudentPicker({
         )}
       </div>
 
-      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 md:flex-wrap md:overflow-visible">
         {students.map((student) => {
           const active = student.id === selectedId;
           return (

@@ -1,14 +1,16 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Check, ChevronLeft, Dumbbell, Loader2, Play } from "lucide-react";
+import { Check, ChevronLeft, ClipboardList, Dumbbell, Loader2, Timer } from "lucide-react";
 import { AuthGate } from "@/components/AuthGate";
+import { PremiumCollapsible } from "@/components/student/ui/PremiumCollapsible";
 import { supabase } from "@/integrations/supabase/client";
 import {
   formatLoadLabel,
   formatRestLabel,
   formatSeriesLabel,
 } from "@/lib/workout-display";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/treino/$id")({
   head: () => ({ meta: [{ title: "Treino — FitPro AI" }] }),
@@ -44,14 +46,27 @@ type DbWorkout = {
   exercises: DbExercise[] | null;
 };
 
+function formatElapsed(seconds: number) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
 function WorkoutPage() {
   const { id } = Route.useParams();
   const router = useRouter();
   const [active, setActive] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
   const [completedSetIds, setCompletedSetIds] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
-    if (!active) setCompletedSetIds(new Set());
+    if (!active) {
+      setElapsed(0);
+      setCompletedSetIds(new Set());
+      return;
+    }
+    const t = setInterval(() => setElapsed((e) => e + 1), 1000);
+    return () => clearInterval(t);
   }, [active]);
 
   function toggleSetComplete(setId: string) {
@@ -108,191 +123,176 @@ function WorkoutPage() {
   }
 
   const exercises = workout.exercises ?? [];
+  const allNotes = exercises
+    .filter((e) => e.note?.trim())
+    .map((e) => ({ name: e.name, note: e.note!.trim() }));
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <header className="relative bg-gradient-hero px-4 pt-10 pb-4 text-center border-b border-border">
+    <div className="min-h-screen bg-background pb-28">
+      <header className="sticky top-0 z-20 bg-gradient-hero px-4 pt-10 pb-4 border-b border-border">
         <button
           type="button"
           onClick={() => router.navigate({ to: "/treinos" })}
           className="absolute left-4 top-10 flex size-9 items-center justify-center rounded-full border border-border bg-card/80"
         >
-          <ChevronLeft className="size-5 text-foreground" />
+          <ChevronLeft className="size-5" />
         </button>
-        <div className="flex items-center justify-center gap-2">
-          <Dumbbell className="size-6 text-primary" />
-          <span className="font-black tracking-tight text-foreground">
-            FitPro <span className="text-primary">AI</span>
-          </span>
-        </div>
-        <p className="mt-3 text-sm font-medium text-foreground">{workout.title}</p>
-        {workout.muscles && (
-          <p className="text-xs text-muted-foreground mt-0.5">{workout.muscles}</p>
-        )}
+        <p className="text-center text-base font-black text-foreground">Meu treino</p>
+        <p className="text-center text-xs text-muted-foreground mt-1">
+          Treino {workout.letter} · {workout.title}
+        </p>
       </header>
 
-      <div className="border-b border-primary/20 bg-primary/10 px-4 py-5 text-center">
-        {!active ? (
-          <>
+      <div className="mx-3 mt-4 rounded-3xl border border-border bg-card/50 overflow-hidden shadow-card">
+        {allNotes.length > 0 && (
+          <div className="p-3 border-b border-border">
+            <PremiumCollapsible title="Observações" icon={ClipboardList}>
+              <ul className="space-y-2">
+                {allNotes.map((n) => (
+                  <li key={n.name}>
+                    <span className="font-semibold text-foreground">{n.name}: </span>
+                    {n.note}
+                  </li>
+                ))}
+              </ul>
+            </PremiumCollapsible>
+          </div>
+        )}
+
+        <div className="divide-y divide-border">
+          {exercises.length === 0 && (
+            <p className="text-center text-sm text-muted-foreground py-12 px-4">
+              Seu profissional ainda não adicionou exercícios neste treino.
+            </p>
+          )}
+          {exercises.map((exercise) => (
+            <ExerciseRow
+              key={exercise.id}
+              exercise={exercise}
+              muscles={workout.muscles}
+              active={active}
+              completedSetIds={completedSetIds}
+              onToggleSet={toggleSetComplete}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Barra fixa inferior — estilo referência */}
+      <div className="fixed bottom-0 inset-x-0 z-30 border-t border-primary/30 bg-gradient-to-r from-primary/95 to-primary pb-[env(safe-area-inset-bottom)]">
+        <div className="mx-auto max-w-md flex items-center gap-3 px-4 py-3">
+          <div className="flex items-center gap-2 text-primary-foreground min-w-0 flex-1">
+            <Timer className="size-5 shrink-0 opacity-90" />
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase opacity-80 truncate">
+                {active ? "Treino em andamento" : "Pronto para treinar"}
+              </p>
+              <p className="text-lg font-black tabular-nums">{formatElapsed(elapsed)}</p>
+            </div>
+          </div>
+          {!active ? (
             <button
               type="button"
               onClick={() => setActive(true)}
-              className="mx-auto block min-w-[200px] rounded-xl bg-gradient-primary px-8 py-3 text-lg font-black tracking-wide text-primary-foreground shadow-glow active:scale-[0.98]"
+              className="shrink-0 rounded-xl bg-background px-5 py-2.5 text-sm font-black text-primary shadow-lg active:scale-[0.98]"
             >
-              INICIAR
+              Iniciar treino
             </button>
-            <p className="mt-3 text-xs text-muted-foreground max-w-xs mx-auto leading-relaxed">
-              Você está no &quot;modo visualização&quot;. Aperte INICIAR para começar seu treino.
-            </p>
-          </>
-        ) : (
-          <>
-            <p className="text-sm font-bold text-foreground">
-              Treino em andamento · Treino {workout.letter}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Toque em cada série para marcar como concluída
-            </p>
+          ) : (
             <button
               type="button"
               onClick={() => setActive(false)}
-              className="mt-3 text-xs text-primary underline"
+              className="shrink-0 rounded-xl bg-background/20 border border-primary-foreground/30 px-4 py-2.5 text-xs font-bold text-primary-foreground"
             >
-              Voltar ao modo visualização
+              Encerrar
             </button>
-          </>
-        )}
-      </div>
-
-      <div className="px-3 py-4 space-y-3">
-        {exercises.length === 0 && (
-          <p className="text-center text-sm text-muted-foreground py-10">
-            Seu profissional ainda não adicionou exercícios neste treino.
-          </p>
-        )}
-        {exercises.map((exercise) => (
-          <ExerciseCard
-            key={exercise.id}
-            exercise={exercise}
-            active={active}
-            completedSetIds={completedSetIds}
-            onToggleSet={toggleSetComplete}
-          />
-        ))}
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-function ExerciseCard({
+function ExerciseRow({
   exercise,
+  muscles,
   active,
   completedSetIds,
   onToggleSet,
 }: {
   exercise: DbExercise;
+  muscles: string | null;
   active: boolean;
   completedSetIds: Set<string>;
   onToggleSet: (setId: string) => void;
 }) {
+  const [showDetail, setShowDetail] = useState(false);
   const sets = exercise.exercise_sets ?? [];
-  const hasSetNotes = sets.some((set) => set.note?.trim());
-  const completedCount = sets.filter((set) => completedSetIds.has(set.id)).length;
+  const muscleLabel = muscles?.split(/[,/]/)[0]?.trim() ?? "Geral";
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden flex shadow-card">
-      <div className="flex-1 p-4 min-w-0">
-        <h3 className="font-bold text-foreground text-[15px] leading-snug">{exercise.name}</h3>
-        <dl className="mt-2 space-y-0.5 text-sm text-muted-foreground">
-          <div>
+    <div className="px-4 py-4">
+      <button
+        type="button"
+        onClick={() => setShowDetail((v) => !v)}
+        className="w-full text-left"
+      >
+        <p className="text-[15px] font-bold text-foreground leading-snug">{exercise.name}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{muscleLabel}</p>
+      </button>
+
+      {showDetail && (
+        <div className="mt-3 space-y-2 rounded-xl bg-muted/30 p-3 text-xs text-muted-foreground">
+          <p>
             <span className="font-semibold text-foreground">Séries: </span>
             {formatSeriesLabel(sets)}
-          </div>
-          <div>
+          </p>
+          <p>
             <span className="font-semibold text-foreground">Carga: </span>
             {formatLoadLabel(sets)}
-          </div>
-          <div>
+          </p>
+          <p>
             <span className="font-semibold text-foreground">Intervalo: </span>
             {formatRestLabel(exercise.rest_seconds)}
-          </div>
-        </dl>
+          </p>
+          {exercise.note?.trim() && (
+            <p className="text-foreground leading-relaxed">{exercise.note.trim()}</p>
+          )}
 
-        {exercise.note?.trim() && (
-          <div className="mt-2 rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-2 text-xs text-foreground leading-relaxed">
-            <span className="font-semibold text-primary">Observação: </span>
-            {exercise.note.trim()}
-          </div>
-        )}
-
-        {(active || hasSetNotes) && sets.length > 0 && (
-          <div className="mt-3 space-y-1.5 border-t border-border pt-3">
-            {active && sets.length > 0 && (
-              <p className="text-[10px] font-semibold text-muted-foreground mb-1">
-                {completedCount}/{sets.length} séries concluídas
-              </p>
-            )}
-            {sets.map((set) => {
-              const done = completedSetIds.has(set.id);
-
-              return (
-                <div key={set.id} className="space-y-0.5">
-                  {active ? (
-                    <button
-                      type="button"
-                      onClick={() => onToggleSet(set.id)}
-                      aria-pressed={done}
-                      aria-label={`Série ${set.position}${done ? " concluída" : ""}`}
-                      className={`flex w-full items-center gap-2 rounded-lg border px-2 py-1.5 text-xs transition-colors active:scale-[0.99] ${
-                        done
-                          ? "border-primary/40 bg-primary/10"
-                          : "border-border bg-background hover:bg-muted/40"
-                      }`}
+          {active && sets.length > 0 && (
+            <div className="space-y-1.5 pt-2 border-t border-border">
+              {sets.map((set) => {
+                const done = completedSetIds.has(set.id);
+                return (
+                  <button
+                    key={set.id}
+                    type="button"
+                    onClick={() => onToggleSet(set.id)}
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded-lg border px-2 py-2 transition-colors",
+                      done
+                        ? "border-primary/40 bg-primary/10"
+                        : "border-border bg-background",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold",
+                        done ? "bg-primary text-primary-foreground" : "border border-border text-primary",
+                      )}
                     >
-                      <span
-                        className={`flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
-                          done
-                            ? "bg-primary text-primary-foreground"
-                            : "border border-border text-primary"
-                        }`}
-                      >
-                        {done ? <Check className="size-3.5" strokeWidth={3} /> : `${set.position}ª`}
-                      </span>
-                      <span className={`flex-1 text-left ${done ? "text-muted-foreground line-through" : "text-foreground"}`}>
-                        {set.target_reps}
-                      </span>
-                      <span className={done ? "text-muted-foreground line-through" : "text-muted-foreground"}>
-                        {set.target_load ?? 0} kg
-                      </span>
-                    </button>
-                  ) : (
-                    <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-2 py-1.5 text-xs">
-                      <span className="w-6 font-bold text-primary">{set.position}ª</span>
-                      <span className="flex-1 text-foreground">{set.target_reps}</span>
-                      <span className="text-muted-foreground">{set.target_load ?? 0} kg</span>
-                    </div>
-                  )}
-                  {set.note?.trim() && (
-                    <p className="text-[11px] text-muted-foreground pl-8 leading-snug">
-                      <span className="font-semibold text-foreground">Obs.: </span>
-                      {set.note.trim()}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      <div className="relative w-[110px] shrink-0 bg-muted flex items-center justify-center">
-        <Dumbbell className="size-10 text-muted-foreground/50" />
-        <div className="absolute inset-0 flex items-center justify-center bg-background/40">
-          <div className="size-10 rounded-full bg-card border border-border flex items-center justify-center shadow-card">
-            <Play className="size-5 text-primary ml-0.5" fill="currentColor" />
-          </div>
+                      {done ? <Check className="size-3.5" strokeWidth={3} /> : `${set.position}ª`}
+                    </span>
+                    <span className={cn("flex-1 text-left", done && "line-through opacity-70")}>
+                      {set.target_reps} · {set.target_load ?? 0} kg
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
-      </div>
+      )}
     </div>
   );
 }

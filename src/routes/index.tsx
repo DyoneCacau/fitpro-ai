@@ -178,37 +178,21 @@ function HomeInner() {
 
 
       {user?.id && (
-
-        <>
-
+        <div className="md:grid md:grid-cols-2 md:gap-6 md:px-5 md:pb-8">
           <ProfessionalHomeAgenda
-
             personalId={user.id}
-
             students={students.map((s) => ({
-
               id: s.id,
-
               full_name: s.full_name,
-
             }))}
-
           />
-
           <StudentDirectorySection
-
             personalId={user.id}
-
             students={students}
-
             loading={loadingStudents}
-
             onAppointmentSaved={refreshAgenda}
-
           />
-
-        </>
-
+        </div>
       )}
 
     </AppShell>
