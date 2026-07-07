@@ -13,7 +13,7 @@ const MENU = [
   { to: "/feed", label: "Feed", icon: Users },
 ] as const;
 
-export function MfitStudentHome() {
+export function StudentHome() {
   const { name, firstName, initials, avatarUrl } = useDisplayName();
 
   return (

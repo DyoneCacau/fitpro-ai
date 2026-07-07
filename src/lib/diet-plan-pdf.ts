@@ -1,5 +1,5 @@
 import {
-  formatFoodItemDietbox,
+  formatFoodItemPortion,
   getMealMainItems,
   getMealSlotMeta,
   getMealSubstitutionGroups,
@@ -76,7 +76,7 @@ export async function downloadDietPlanPdf(
       writeLine(`${meta.label} (${meal.time_label ?? meta.time})`, { bold: true, size: 11, gap: 4 });
 
       for (const item of mainItems) {
-        writeLine(`• ${formatFoodItemDietbox(item)}`, { size: 10, gap: 4 });
+        writeLine(`• ${formatFoodItemPortion(item)}`, { size: 10, gap: 4 });
         if (item.notes?.trim()) writeLine(`  Obs.: ${item.notes}`, { size: 9, gap: 4 });
       }
 
@@ -90,7 +90,7 @@ export async function downloadDietPlanPdf(
       for (const group of substGroups) {
         writeLine(group.set.name, { bold: true, size: 10, gap: 4 });
         for (const item of group.items) {
-          writeLine(`• ${formatFoodItemDietbox(item)}`, { size: 10, gap: 4 });
+          writeLine(`• ${formatFoodItemPortion(item)}`, { size: 10, gap: 4 });
         }
       }
 

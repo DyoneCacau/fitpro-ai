@@ -11,7 +11,9 @@ import {
   formatAlertMessage,
   formatRecurrenceInfo,
   fetchTodayAppointments,
+  fetchUpcomingAppointments,
   formatAppointmentTime,
+  groupAppointmentsByDay,
   type AppointmentKind,
   type StudentAppointment,
 } from "@/lib/appointments";
@@ -25,6 +27,7 @@ export function ProfessionalHomeAgenda({
 }) {
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
+  const [agendaView, setAgendaView] = useState<"hoje" | "proximos">("hoje");
   const nameById = useMemo(() => {
     const map = new Map<string, string>();
     for (const s of students) {
@@ -35,6 +38,7 @@ export function ProfessionalHomeAgenda({
 
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ["todayAppointments", personalId] });
+    void qc.invalidateQueries({ queryKey: ["upcomingAppointments", personalId] });
     void qc.invalidateQueries({ queryKey: ["followUpAlerts", personalId] });
     void qc.invalidateQueries({ queryKey: ["studentAppointmentHistory"] });
     void qc.invalidateQueries({ queryKey: ["studentFollowUp"] });
@@ -45,6 +49,14 @@ export function ProfessionalHomeAgenda({
     queryKey: ["todayAppointments", personalId],
     queryFn: () => fetchTodayAppointments(personalId),
   });
+
+  const { data: upcoming = [], isLoading: loadingUpcoming } = useQuery({
+    queryKey: ["upcomingAppointments", personalId],
+    queryFn: () => fetchUpcomingAppointments(personalId, 30),
+    enabled: agendaView === "proximos",
+  });
+
+  const upcomingGroups = useMemo(() => groupAppointmentsByDay(upcoming), [upcoming]);
 
   const { data: alerts = [] } = useQuery({
     queryKey: ["followUpAlerts", personalId],
@@ -117,9 +129,11 @@ export function ProfessionalHomeAgenda({
           <div>
             <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
               <CalendarClock className="size-4 text-primary" />
-              Agenda de hoje
+              Agenda
             </h2>
-            <p className="text-[10px] text-muted-foreground capitalize">{todayLabel}</p>
+            <p className="text-[10px] text-muted-foreground capitalize">
+              {agendaView === "hoje" ? todayLabel : "Próximos 30 dias"}
+            </p>
           </div>
           <button
             type="button"
@@ -131,16 +145,55 @@ export function ProfessionalHomeAgenda({
           </button>
         </div>
 
-        {isLoading ? (
+        <div className="mb-3 flex gap-1 rounded-xl border border-border bg-card p-1">
+          <AgendaTab active={agendaView === "hoje"} onClick={() => setAgendaView("hoje")}>
+            Hoje
+          </AgendaTab>
+          <AgendaTab active={agendaView === "proximos"} onClick={() => setAgendaView("proximos")}>
+            Próximos dias
+          </AgendaTab>
+        </div>
+
+        {agendaView === "hoje" ? (
+          isLoading ? (
+            <div className="flex justify-center py-6">
+              <Loader2 className="size-5 animate-spin text-primary" />
+            </div>
+          ) : today.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border bg-card/40 p-5 text-center">
+              <p className="text-sm text-muted-foreground">Nenhum agendamento para hoje.</p>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Veja a aba <span className="font-semibold">Próximos dias</span> ou crie um novo.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowForm(true)}
+                className="mt-3 text-xs font-semibold text-primary"
+              >
+                Criar agendamento
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {today.map((ap) => (
+                <AppointmentRow
+                  key={ap.id}
+                  appointment={ap}
+                  studentName={nameById.get(ap.aluno_id) ?? "Aluno"}
+                  onComplete={() => complete.mutate(ap.id)}
+                  onCancel={() => cancel.mutate(ap.id)}
+                  busy={complete.isPending || cancel.isPending}
+                />
+              ))}
+            </div>
+          )
+        ) : loadingUpcoming ? (
           <div className="flex justify-center py-6">
             <Loader2 className="size-5 animate-spin text-primary" />
           </div>
-        ) : today.length === 0 ? (
+        ) : upcomingGroups.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-card/40 p-5 text-center">
-            <p className="text-sm text-muted-foreground">Nenhum agendamento para hoje.</p>
-            <p className="text-[10px] text-muted-foreground mt-1">
-              Retorno e avaliação usam o plano definido no cadastro do aluno.
-            </p>
+            <p className="text-sm text-muted-foreground">Nenhum agendamento nos próximos 30 dias.</p>
             <button
               type="button"
               onClick={() => setShowForm(true)}
@@ -150,16 +203,25 @@ export function ProfessionalHomeAgenda({
             </button>
           </div>
         ) : (
-          <div className="space-y-2">
-            {today.map((ap) => (
-              <AppointmentRow
-                key={ap.id}
-                appointment={ap}
-                studentName={nameById.get(ap.aluno_id) ?? "Aluno"}
-                onComplete={() => complete.mutate(ap.id)}
-                onCancel={() => cancel.mutate(ap.id)}
-                busy={complete.isPending || cancel.isPending}
-              />
+          <div className="space-y-4">
+            {upcomingGroups.map((group) => (
+              <div key={group.key}>
+                <p className="text-[11px] font-bold text-muted-foreground capitalize mb-2">
+                  {group.label}
+                </p>
+                <div className="space-y-2">
+                  {group.items.map((ap) => (
+                    <AppointmentRow
+                      key={ap.id}
+                      appointment={ap}
+                      studentName={nameById.get(ap.aluno_id) ?? "Aluno"}
+                      onComplete={() => complete.mutate(ap.id)}
+                      onCancel={() => cancel.mutate(ap.id)}
+                      busy={complete.isPending || cancel.isPending}
+                    />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         )}
@@ -177,6 +239,28 @@ export function ProfessionalHomeAgenda({
         />
       )}
     </div>
+  );
+}
+
+function AgendaTab({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex-1 rounded-lg py-1.5 text-[11px] font-bold transition-colors ${
+        active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted/50"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 

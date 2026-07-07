@@ -24,7 +24,7 @@ import {
   fetchDietPlanById,
   fetchDietTemplates,
   fetchStudentDietPlan,
-  formatFoodItemDietbox,
+  formatFoodItemPortion,
   formatFoodItemLine,
   ensureDietMeal,
   ensureDietPlan,
@@ -514,7 +514,7 @@ export function StudentDietPanel({ alunoId, templatePlanId, personalId }: Props)
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium">{item.food}</p>
                               <p className="text-xs text-muted-foreground mt-0.5">
-                                {formatFoodItemDietbox(item)}
+                                {formatFoodItemPortion(item)}
                               </p>
                               {item.notes && (
                                 <p className="text-[10px] text-muted-foreground mt-0.5">{item.notes}</p>

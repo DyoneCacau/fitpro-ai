@@ -81,7 +81,6 @@ export function WorkoutTemplateLibrary() {
 
   return (
     <div className="space-y-4">
-      {/* Header estilo MFIT */}
       <div className="rounded-2xl bg-gradient-hero border border-border overflow-hidden">
         <div className="px-4 py-3 flex items-center justify-between">
           <h2 className="text-base font-bold text-foreground">Biblioteca de Treinos</h2>
@@ -158,7 +157,7 @@ export function WorkoutTemplateLibrary() {
         <div className="rounded-2xl border border-dashed border-border p-8 text-center">
           <p className="text-sm font-semibold">Nenhuma rotina na biblioteca</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Toque em <strong>+ Rotina</strong> para criar como no MFIT Personal.
+            Toque em <strong>+ Rotina</strong> para criar sua primeira rotina.
           </p>
         </div>
       )}

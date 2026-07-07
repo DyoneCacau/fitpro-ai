@@ -178,7 +178,7 @@ export function AnthropometricForm({
         <p className="text-[10px] text-muted-foreground mt-0.5">
           {isEditing
             ? "Corrija os dados e clique em Salvar alterações. Enter nos campos não envia o formulário."
-            : "Preencha os campos como no Dietbox. Use o botão abaixo para salvar — Enter não envia."}
+            : "Preencha os campos e use o botão abaixo para salvar — Enter não envia."}
         </p>
       </div>
 

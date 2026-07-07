@@ -1,4 +1,4 @@
--- Conjuntos de substituição por refeição (estilo Dietbox)
+-- Conjuntos de substituição por refeição
 
 CREATE TABLE public.diet_meal_substitution_sets (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

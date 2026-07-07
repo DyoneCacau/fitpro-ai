@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Check, CheckCircle2, ChevronDown, Loader2, Repeat2 } from "lucide-react";
 import {
-  formatFoodItemDietbox,
+  formatFoodItemPortion,
   getMealMainItems,
   getMealSlotMeta,
   getMealSubstitutionGroups,
@@ -125,7 +125,7 @@ export function MealPlanCard({
                     <div className="flex items-start justify-between gap-2">
                       <p className="text-xs leading-relaxed text-foreground flex items-start gap-1.5 min-w-0">
                         {completed && <Check className="size-3.5 text-emerald-500 shrink-0 mt-0.5" strokeWidth={3} />}
-                        <span>{formatFoodItemDietbox(item)}</span>
+                        <span>{formatFoodItemPortion(item)}</span>
                       </p>
                       {hasOptions && panelKey && (
                         <button
@@ -144,7 +144,7 @@ export function MealPlanCard({
                         </p>
                         {mealGroup.items.map((alt) => (
                           <p key={alt.id} className="text-[11px] text-muted-foreground">
-                            {formatFoodItemDietbox(alt)}
+                            {formatFoodItemPortion(alt)}
                           </p>
                         ))}
                       </div>
@@ -171,7 +171,7 @@ export function MealPlanCard({
                   <p className="text-[10px] font-bold text-primary mb-1">{group.set.name}</p>
                   {group.items.map((item) => (
                     <p key={item.id} className="text-xs leading-relaxed">
-                      {formatFoodItemDietbox(item)}
+                      {formatFoodItemPortion(item)}
                     </p>
                   ))}
                 </div>

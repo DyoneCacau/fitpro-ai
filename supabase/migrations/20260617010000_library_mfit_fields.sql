@@ -1,4 +1,4 @@
--- Campos da biblioteca estilo MFIT Personal (sexo alvo + tipo treino/aeróbico)
+-- Campos da biblioteca de treinos (sexo alvo + tipo treino/aeróbico)
 
 CREATE TYPE public.routine_kind AS ENUM ('treinos', 'aerobico');
 CREATE TYPE public.routine_target_sex AS ENUM ('masculino', 'feminino', 'unissex');

@@ -97,8 +97,7 @@ export function WorkoutRoutineBar({ alunoId, personalId, routineId, onRoutineCha
             Periodização · rotina
           </p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Libere treinos por fase, como no{" "}
-            <span className="text-foreground">MFIT Personal</span>
+            Libere treinos por fase da periodização
           </p>
         </div>
         <button
@@ -552,8 +551,8 @@ function CloneRoutineModal({
   return (
     <ModalShell title="Clonar rotina" onClose={onClose} tall>
       <p className="text-xs text-muted-foreground mb-3">
-        Copie da biblioteca padrão ou de outra rotina do aluno — como o botão{" "}
-        <strong>Clonar</strong> do MFIT Personal.
+        Copie da biblioteca padrão ou de outra rotina do aluno com o botão{" "}
+        <strong>Clonar</strong>.
       </p>
       {isLoading || loadingPeers ? (
         <Loader2 className="size-5 animate-spin text-primary mx-auto mb-3" />
@@ -662,8 +661,7 @@ function CopyToOtherStudentModal({
   return (
     <ModalShell title="Copiar rotina para outro aluno" onClose={onClose}>
       <p className="text-xs text-muted-foreground mb-3">
-        Copia <strong>{sourceRoutineName}</strong> com todos os treinos A/B/C e exercícios — como no
-        MFIT Personal.
+        Copia <strong>{sourceRoutineName}</strong> com todos os treinos A/B/C e exercícios.
       </p>
       {isLoading && <Loader2 className="size-5 animate-spin text-primary mx-auto mb-3" />}
       <form onSubmit={submit} className="space-y-3">
@@ -711,7 +709,7 @@ function HistoryModal({
   return (
     <ModalShell title="Histórico de rotinas" onClose={onClose}>
       <p className="text-xs text-muted-foreground mb-3">
-        Rotinas arquivadas ficam no histórico do aluno, como no MFIT.
+        Rotinas arquivadas ficam no histórico do aluno.
       </p>
       <div className="space-y-2 max-h-[50vh] overflow-y-auto">
         {routines.map((r) => (

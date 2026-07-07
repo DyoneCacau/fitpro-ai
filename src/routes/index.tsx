@@ -8,7 +8,7 @@ import { AppShell } from "@/components/AppShell";
 
 import { AuthGate } from "@/components/AuthGate";
 
-import { MfitStudentHome } from "@/components/student/MfitStudentHome";
+import { StudentHome } from "@/components/student/StudentHome";
 
 import { ProfessionalHomeAgenda } from "@/components/professional/ProfessionalHomeAgenda";
 import { ProfessionalInsightsCards } from "@/components/professional/ProfessionalInsightsCards";
@@ -108,7 +108,7 @@ function HomeInner() {
 
       <AppShell>
 
-        <MfitStudentHome />
+        <StudentHome />
 
       </AppShell>
 

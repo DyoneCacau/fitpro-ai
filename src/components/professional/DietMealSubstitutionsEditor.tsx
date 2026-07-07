@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { FoodItemFormFields } from "@/components/diet/FoodItemFormFields";
 import {
   createMealSubstitutionSet,
-  formatFoodItemDietbox,
+  formatFoodItemPortion,
   getMealSubstitutionGroups,
   getDietErrorMessage,
   removeMealSubstitutionSet,
@@ -88,7 +88,7 @@ export function DietMealSubstitutionsEditor({
             <ul className="space-y-1 mb-2">
               {group.items.map((item) => (
                 <li key={item.id} className="text-xs text-muted-foreground">
-                  {formatFoodItemDietbox(item)}
+                  {formatFoodItemPortion(item)}
                 </li>
               ))}
             </ul>

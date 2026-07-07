@@ -53,7 +53,7 @@ function ProfessionalTreinosPage() {
     <AppShell>
       <PageHeader
         title="Treinos"
-        subtitle="Periodização e prescrição · estilo MFIT Personal"
+        subtitle="Periodização e prescrição de treinos"
       />
 
       <div className="px-5 pb-2">

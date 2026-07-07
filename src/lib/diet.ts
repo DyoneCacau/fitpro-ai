@@ -110,15 +110,15 @@ export type FoodUnitId = "g" | "un" | "fatia" | "col_sob" | "ml" | "un_md";
 export const FOOD_UNIT_OPTIONS: {
   id: FoodUnitId;
   label: string;
-  dietboxLabel: string;
+  portionLabel: string;
   quantityHint: string;
 }[] = [
-  { id: "g", label: "Gramas (g)", dietboxLabel: "Grama", quantityHint: "Quantidade (g)" },
-  { id: "un", label: "Unidade", dietboxLabel: "Unidade", quantityHint: "Quantidade (un)" },
-  { id: "fatia", label: "Fatia", dietboxLabel: "Fatia", quantityHint: "Quantidade (fatias)" },
-  { id: "col_sob", label: "Colher sob.", dietboxLabel: "Colher De Sobremesa", quantityHint: "Quantidade (colheres)" },
-  { id: "ml", label: "Mililitro (ml)", dietboxLabel: "Mililitro", quantityHint: "Quantidade (ml)" },
-  { id: "un_md", label: "Un. média", dietboxLabel: "Unidade média (75g)", quantityHint: "Quantidade (un)" },
+  { id: "g", label: "Gramas (g)", portionLabel: "Grama", quantityHint: "Quantidade (g)" },
+  { id: "un", label: "Unidade", portionLabel: "Unidade", quantityHint: "Quantidade (un)" },
+  { id: "fatia", label: "Fatia", portionLabel: "Fatia", quantityHint: "Quantidade (fatias)" },
+  { id: "col_sob", label: "Colher sob.", portionLabel: "Colher De Sobremesa", quantityHint: "Quantidade (colheres)" },
+  { id: "ml", label: "Mililitro (ml)", portionLabel: "Mililitro", quantityHint: "Quantidade (ml)" },
+  { id: "un_md", label: "Un. média", portionLabel: "Unidade média (75g)", quantityHint: "Quantidade (un)" },
 ];
 
 export function getFoodUnitMeta(unit: string) {
@@ -142,12 +142,12 @@ export function formatFoodQuantity(quantity: number, unit: FoodUnitId | string =
   return `${formatted} ${meta.label.toLowerCase()}`;
 }
 
-/** Formato Dietbox: "Mamão (Grama: 150)" */
-export function formatFoodItemDietbox(item: Pick<DietMealItem, "food" | "quantity" | "unit">): string {
+/** Formato de porção: "Mamão (Grama: 150)" */
+export function formatFoodItemPortion(item: Pick<DietMealItem, "food" | "quantity" | "unit">): string {
   const meta = getFoodUnitMeta(item.unit || "g");
   const qty = Number(item.quantity);
   const formatted = qty % 1 === 0 ? String(qty) : qty.toFixed(1);
-  return `${item.food} (${meta.dietboxLabel}: ${formatted})`;
+  return `${item.food} (${meta.portionLabel}: ${formatted})`;
 }
 
 export function formatFoodItemLine(item: Pick<DietMealItem, "quantity" | "kcal" | "unit">): string {

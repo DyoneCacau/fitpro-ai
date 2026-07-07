@@ -142,6 +142,46 @@ export async function fetchTodayAppointments(personalId: string): Promise<Studen
   return (data ?? []) as StudentAppointment[];
 }
 
+export async function fetchUpcomingAppointments(
+  personalId: string,
+  days = 30,
+): Promise<StudentAppointment[]> {
+  const now = new Date();
+  const until = endOfDay(addDays(now, days));
+  const { data, error } = await supabase
+    .from("student_appointments")
+    .select(
+      "id, personal_id, aluno_id, scheduled_at, duration_minutes, kind, status, notes, recurrence_days",
+    )
+    .eq("personal_id", personalId)
+    .eq("status", "scheduled")
+    .gte("scheduled_at", startOfDay(now).toISOString())
+    .lte("scheduled_at", until.toISOString())
+    .order("scheduled_at");
+  if (error) throw error;
+  return (data ?? []) as StudentAppointment[];
+}
+
+export function groupAppointmentsByDay(
+  items: StudentAppointment[],
+): { key: string; label: string; items: StudentAppointment[] }[] {
+  const groups = new Map<string, { label: string; items: StudentAppointment[] }>();
+  for (const ap of items) {
+    const d = new Date(ap.scheduled_at);
+    const key = startOfDay(d).toISOString();
+    const label = d.toLocaleDateString("pt-BR", {
+      weekday: "long",
+      day: "2-digit",
+      month: "short",
+    });
+    if (!groups.has(key)) groups.set(key, { label, items: [] });
+    groups.get(key)!.items.push(ap);
+  }
+  return [...groups.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => ({ key, label: value.label, items: value.items }));
+}
+
 export async function fetchStudentAppointmentHistory(
   personalId: string,
   alunoId: string,
