@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { Capacitor } from "@capacitor/core";
 import { useState } from "react";
 import { Check, ExternalLink, Loader2, Unplug } from "lucide-react";
@@ -157,6 +158,11 @@ export function WearableConnectPanel() {
           </li>
           <li>
             Notificações do app aparecem no relógio quando pareado com o celular (push nativo).
+          </li>
+          <li>
+            <Link to="/privacidade-saude" className="text-primary underline">
+              Política de dados de saúde
+            </Link>
           </li>
         </ul>
       </div>

@@ -5,7 +5,7 @@ const devServerUrl = process.env.CAPACITOR_SERVER_URL;
 const config: CapacitorConfig = {
   appId: "com.fitpro.ai",
   appName: "FitPro AI",
-  webDir: "www",
+  webDir: "dist/client",
   server: devServerUrl
     ? {
         url: devServerUrl,

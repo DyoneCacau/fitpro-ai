@@ -4,4 +4,5 @@
     <string name="title_activity_main">FitPro AI</string>
     <string name="package_name">com.fitpro.ai</string>
     <string name="custom_url_scheme">com.fitpro.ai</string>
+    <string name="health_connect_privacy_policy_url">https://fitpro-ai.app/privacidade-saude</string>
 </resources>

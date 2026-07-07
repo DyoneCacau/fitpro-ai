@@ -47,5 +47,13 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSHealthShareUsageDescription</key>
+	<string>O FitPro AI lê passos, calorias, distância, frequência cardíaca e sono para montar seu painel de atividade.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>O FitPro AI pode registrar dados de saúde que você criar explicitamente no app.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>

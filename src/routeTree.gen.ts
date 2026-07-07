@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TreinosRouteImport } from './routes/treinos'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as PrivacidadeSaudeRouteImport } from './routes/privacidade-saude'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as NotificacoesRouteImport } from './routes/notificacoes'
 import { Route as IntegracoesRouteImport } from './routes/integracoes'
@@ -37,6 +38,11 @@ const TreinosRoute = TreinosRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacidadeSaudeRoute = PrivacidadeSaudeRouteImport.update({
+  id: '/privacidade-saude',
+  path: '/privacidade-saude',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PerfilRoute = PerfilRouteImport.update({
@@ -140,6 +146,7 @@ export interface FileRoutesByFullPath {
   '/integracoes': typeof IntegracoesRouteWithChildren
   '/notificacoes': typeof NotificacoesRoute
   '/perfil': typeof PerfilRoute
+  '/privacidade-saude': typeof PrivacidadeSaudeRoute
   '/reset-password': typeof ResetPasswordRoute
   '/treinos': typeof TreinosRoute
   '/alunos/$alunoId': typeof AlunosAlunoIdRoute
@@ -161,6 +168,7 @@ export interface FileRoutesByTo {
   '/integracoes': typeof IntegracoesRouteWithChildren
   '/notificacoes': typeof NotificacoesRoute
   '/perfil': typeof PerfilRoute
+  '/privacidade-saude': typeof PrivacidadeSaudeRoute
   '/reset-password': typeof ResetPasswordRoute
   '/treinos': typeof TreinosRoute
   '/alunos/$alunoId': typeof AlunosAlunoIdRoute
@@ -183,6 +191,7 @@ export interface FileRoutesById {
   '/integracoes': typeof IntegracoesRouteWithChildren
   '/notificacoes': typeof NotificacoesRoute
   '/perfil': typeof PerfilRoute
+  '/privacidade-saude': typeof PrivacidadeSaudeRoute
   '/reset-password': typeof ResetPasswordRoute
   '/treinos': typeof TreinosRoute
   '/alunos/$alunoId': typeof AlunosAlunoIdRoute
@@ -206,6 +215,7 @@ export interface FileRouteTypes {
     | '/integracoes'
     | '/notificacoes'
     | '/perfil'
+    | '/privacidade-saude'
     | '/reset-password'
     | '/treinos'
     | '/alunos/$alunoId'
@@ -227,6 +237,7 @@ export interface FileRouteTypes {
     | '/integracoes'
     | '/notificacoes'
     | '/perfil'
+    | '/privacidade-saude'
     | '/reset-password'
     | '/treinos'
     | '/alunos/$alunoId'
@@ -248,6 +259,7 @@ export interface FileRouteTypes {
     | '/integracoes'
     | '/notificacoes'
     | '/perfil'
+    | '/privacidade-saude'
     | '/reset-password'
     | '/treinos'
     | '/alunos/$alunoId'
@@ -270,6 +282,7 @@ export interface RootRouteChildren {
   IntegracoesRoute: typeof IntegracoesRouteWithChildren
   NotificacoesRoute: typeof NotificacoesRoute
   PerfilRoute: typeof PerfilRoute
+  PrivacidadeSaudeRoute: typeof PrivacidadeSaudeRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TreinosRoute: typeof TreinosRoute
   ConviteTokenRoute: typeof ConviteTokenRoute
@@ -290,6 +303,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacidade-saude': {
+      id: '/privacidade-saude'
+      path: '/privacidade-saude'
+      fullPath: '/privacidade-saude'
+      preLoaderRoute: typeof PrivacidadeSaudeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/perfil': {
@@ -451,6 +471,7 @@ const rootRouteChildren: RootRouteChildren = {
   IntegracoesRoute: IntegracoesRouteWithChildren,
   NotificacoesRoute: NotificacoesRoute,
   PerfilRoute: PerfilRoute,
+  PrivacidadeSaudeRoute: PrivacidadeSaudeRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TreinosRoute: TreinosRoute,
   ConviteTokenRoute: ConviteTokenRoute,
