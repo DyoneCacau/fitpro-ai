@@ -20,19 +20,25 @@ export function useLinkedProfessional() {
     queryKey: ["linkedProfessional", user?.id],
     enabled: !!user?.id && isStudent,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: mine, error: mineError } = await supabase
         .from("profiles")
-        .select(
-          "personal:profiles!profiles_personal_id_fkey(id, full_name, phone, is_personal_trainer, is_nutritionist, registry_type, registry_number)",
-        )
+        .select("personal_id")
         .eq("id", user!.id)
         .maybeSingle();
 
-      if (error) throw error;
+      if (mineError) throw mineError;
+      if (!mine?.personal_id) return null;
 
-      return (
-        (data as { personal?: LinkedProfessional | null } | null)?.personal ?? null
-      );
+      const { data: pro, error: proError } = await supabase
+        .from("profiles")
+        .select(
+          "id, full_name, phone, is_personal_trainer, is_nutritionist, registry_type, registry_number",
+        )
+        .eq("id", mine.personal_id)
+        .maybeSingle();
+
+      if (proError) throw proError;
+      return (pro as LinkedProfessional | null) ?? null;
     },
   });
 

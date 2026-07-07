@@ -25,6 +25,7 @@ import { StudentSupplementsSection } from "@/components/student/profile/StudentS
 import { StudentTrackingHub } from "@/components/student/tracking/StudentTrackingHub";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useDisplayName } from "@/hooks/use-display-name";
 import { useLinkedProfessional } from "@/hooks/use-linked-professional";
 import { formatAppRole } from "@/lib/labels";
 import { formatProfessionalSpecialties } from "@/lib/professional";
@@ -53,8 +54,8 @@ function Perfil() {
   const { professional, isStudent } = useLinkedProfessional();
   const isProfessional = role === "personal" || role === "admin";
   const [tab, setTab] = useState<PerfilTab>(tabFromUrl ?? "conta");
-  const [headerName, setHeaderName] = useState("");
   const [headerAvatarUrl, setHeaderAvatarUrl] = useState<string | null>(null);
+  const { name, initials } = useDisplayName();
 
   const { data: profile } = useQuery({
     queryKey: [PROFILE_QUERY_KEY, user?.id],
@@ -73,14 +74,7 @@ function Perfil() {
     else setTab("conta");
   }, [tabFromUrl]);
 
-  const defaultName =
-    profile?.full_name ??
-    (user?.user_metadata?.full_name as string | undefined) ??
-    user?.email ??
-    "Atleta";
-  const name = headerName || defaultName;
   const avatarUrl = headerAvatarUrl ?? profileAvatarUrl ?? null;
-  const initials = name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 
   const studentTabs: { id: PerfilTab; label: string; icon: typeof UserIcon }[] = [
     { id: "conta", label: "Conta", icon: UserIcon },
@@ -129,10 +123,7 @@ function Perfil() {
             </span>
           )}
 
-          <ProfileEditSection
-            onAvatarChange={setHeaderAvatarUrl}
-            onNameChange={setHeaderName}
-          />
+          <ProfileEditSection onAvatarChange={setHeaderAvatarUrl} />
         </div>
       </section>
 

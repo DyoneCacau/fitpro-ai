@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { CalendarClock, Dumbbell, Apple, Users, User } from "lucide-react";
-import { useLinkedProfessional } from "@/hooks/use-linked-professional";
-import { formatProfessionalRegistry } from "@/lib/professional";
+import { CalendarClock, Dumbbell, Apple, Users } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useDisplayName } from "@/hooks/use-display-name";
 import { greetingForNow } from "@/lib/workout-display";
 
 const WEEK = [
@@ -21,31 +21,13 @@ const MENU = [
   { to: "/feed", label: "Feed", icon: Users },
 ] as const;
 
-export function MfitStudentHome({ studentName }: { studentName: string }) {
-  const { professional } = useLinkedProfessional();
-  const firstName = studentName.split(" ")[0];
-  const proInitials = (professional?.full_name ?? "P")
-    .split(" ")
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-  const registry = formatProfessionalRegistry(
-    professional?.registry_type,
-    professional?.registry_number,
-  );
+export function MfitStudentHome() {
+  const { name, firstName, initials, avatarUrl } = useDisplayName();
   const todayIndex = (new Date().getDay() + 6) % 7;
 
   return (
     <div className="min-h-[calc(100vh-5rem)] bg-background">
-      <div className="bg-gradient-hero px-5 pt-10 pb-6 text-center relative">
-        <Link
-          to="/perfil"
-          className="absolute right-5 top-10 flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card/80 text-muted-foreground hover:text-primary transition-colors"
-          aria-label="Abrir perfil"
-        >
-          <User className="size-5" />
-        </Link>
+      <div className="bg-gradient-hero px-5 pt-10 pb-6 text-center">
         <div className="flex items-center justify-center gap-2 mb-6">
           <Dumbbell className="size-7 text-primary" strokeWidth={2.5} />
           <span className="text-lg font-black tracking-tight text-foreground">
@@ -53,17 +35,16 @@ export function MfitStudentHome({ studentName }: { studentName: string }) {
           </span>
         </div>
 
-        {professional && (
-          <div className="flex flex-col items-center mb-4">
-            <div className="size-20 rounded-full bg-gradient-primary text-primary-foreground flex items-center justify-center text-xl font-black shadow-glow">
-              {proInitials}
-            </div>
-            <p className="mt-3 text-base font-bold capitalize text-foreground">
-              {professional.full_name}
-            </p>
-            {registry && <p className="text-xs text-primary mt-0.5">{registry}</p>}
-          </div>
-        )}
+        <Link to="/perfil" className="inline-flex flex-col items-center mb-4 active:opacity-80">
+          <Avatar className="size-20 border-2 border-primary/30 shadow-glow">
+            {avatarUrl && <AvatarImage src={avatarUrl} alt={name} />}
+            <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xl font-black">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <p className="mt-3 text-base font-bold text-foreground">{name}</p>
+          <p className="text-[11px] text-primary mt-1 font-semibold">Ver perfil</p>
+        </Link>
 
         <p className="text-sm text-muted-foreground">
           {greetingForNow()},{" "}

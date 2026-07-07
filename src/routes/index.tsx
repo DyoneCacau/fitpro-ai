@@ -15,6 +15,7 @@ import { ProfessionalHomeAgenda } from "@/components/professional/ProfessionalHo
 import { StudentDirectorySection } from "@/components/professional/StudentDirectorySection";
 
 import { useAuth } from "@/hooks/use-auth";
+import { useDisplayName } from "@/hooks/use-display-name";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -65,12 +66,8 @@ function HomeInner() {
   const qc = useQueryClient();
 
   const { user, role, loading: authLoading } = useAuth();
-
   const isProfessional = role === "personal" || role === "admin";
-
-  const name = (user?.user_metadata?.full_name as string) ?? user?.email ?? "Atleta";
-
-  const initials = name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+  const { name, firstName, initials } = useDisplayName(isProfessional ? "Profissional" : "Atleta");
 
 
 
@@ -100,7 +97,7 @@ function HomeInner() {
 
       <AppShell>
 
-        <MfitStudentHome studentName={name} />
+        <MfitStudentHome />
 
       </AppShell>
 
@@ -140,7 +137,7 @@ function HomeInner() {
 
             </p>
 
-            <h1 className="mt-1 text-2xl font-bold text-foreground">Olá, {name.split(" ")[0]} 👋</h1>
+            <h1 className="mt-1 text-2xl font-bold text-foreground">Olá, {firstName} 👋</h1>
 
           </div>
 
