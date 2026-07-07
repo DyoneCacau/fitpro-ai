@@ -17,28 +17,31 @@ import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 
 const items = [
-  { to: "/", label: "Início", icon: Home, match: (path: string) => path === "/" },
+  { to: "/", label: "Início", icon: Home, tour: "home", match: (path: string) => path === "/" },
   {
     to: "/clientes",
     label: "Clientes",
     icon: Users,
+    tour: "clientes",
     match: (path: string) => path === "/clientes" || path.startsWith("/alunos/"),
   },
   {
     to: "/treinos",
     label: "Treinos",
     icon: Dumbbell,
+    tour: "treinos",
     match: (path: string) => path.startsWith("/treinos") || path.startsWith("/treino/"),
   },
-  { to: "/dieta", label: "Dieta", icon: Apple, match: (path: string) => path === "/dieta" },
+  { to: "/dieta", label: "Dieta", icon: Apple, tour: "dieta", match: (path: string) => path === "/dieta" },
   {
     to: "/financeiro",
     label: "Financeiro",
     icon: CreditCard,
+    tour: "financeiro",
     match: (path: string) => path === "/financeiro",
   },
-  { to: "/feed", label: "Feed", icon: Rss, match: (path: string) => path === "/feed" },
-  { to: "/perfil", label: "Perfil", icon: User, match: (path: string) => path === "/perfil" },
+  { to: "/feed", label: "Feed", icon: Rss, tour: "feed", match: (path: string) => path === "/feed" },
+  { to: "/perfil", label: "Perfil", icon: User, tour: "perfil", match: (path: string) => path === "/perfil" },
 ] as const;
 
 export function ProfessionalSidebar() {
@@ -89,6 +92,7 @@ export function ProfessionalSidebar() {
               <Link
                 key={item.to}
                 to={item.to}
+                data-tour={item.tour}
                 title={collapsed ? item.label : undefined}
                 aria-label={item.label}
                 className={cn(
@@ -107,6 +111,7 @@ export function ProfessionalSidebar() {
 
           <Link
             to="/notificacoes"
+            data-tour="notificacoes"
             title={collapsed ? "Notificações" : undefined}
             aria-label="Notificações"
             className={cn(

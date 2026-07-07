@@ -16,6 +16,8 @@ import {
   X,
 } from "lucide-react";
 import { WorkoutRoutineBar } from "@/components/professional/WorkoutRoutineBar";
+import { ExerciseVideoPlayer } from "@/components/student/ExerciseVideoPlayer";
+import { getVideoEmbed } from "@/lib/video-embed";
 import { supabase } from "@/integrations/supabase/client";
 import {
   ensureDefaultStudentRoutine,
@@ -808,23 +810,37 @@ function ExerciseVideoField({
     );
   }
 
+  const trimmed = draft.trim();
+  const embed = getVideoEmbed(trimmed);
+  const invalid = trimmed.length > 0 && embed.kind === "invalid";
+
   return (
-    <div className="space-y-1">
+    <div className="space-y-1.5">
       <label className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1">
-        <Video className="size-3" /> Vídeo de execução · YouTube ou link direto (.mp4)
+        <Video className="size-3" /> Vídeo de execução · YouTube, Vimeo ou link direto (.mp4)
       </label>
       <input
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={() => {
-          const trimmed = draft.trim();
           save.mutate(trimmed || null);
           if (!trimmed) setOpen(false);
         }}
-        placeholder="https://youtube.com/watch?v=… ou https://…/video.mp4"
+        placeholder="https://youtube.com/watch?v=… , vimeo.com/… ou https://…/video.mp4"
         className="field-input text-xs"
       />
-      {draft.trim() && (
+      {invalid && (
+        <p className="text-[10px] font-medium text-destructive">
+          Link inválido. Cole uma URL do YouTube, Vimeo ou de um arquivo de vídeo.
+        </p>
+      )}
+      {!invalid && embed.kind !== "invalid" && (
+        <div className="max-w-xs">
+          <p className="text-[10px] text-muted-foreground mb-1">Pré-visualização</p>
+          <ExerciseVideoPlayer url={trimmed} title="Pré-visualização do vídeo" />
+        </div>
+      )}
+      {trimmed && (
         <button
           type="button"
           onClick={() => {
@@ -1196,13 +1212,22 @@ function CustomExerciseModal({
 }) {
   const [name, setName] = useState("");
   const [prescription, setPrescription] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const trimmedVideo = videoUrl.trim();
+  const videoEmbed = getVideoEmbed(trimmedVideo);
+  const videoInvalid = trimmedVideo.length > 0 && videoEmbed.kind === "invalid";
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const exerciseName = name.trim();
     if (!exerciseName) return;
+    if (videoInvalid) {
+      setError("O link de vídeo é inválido. Use YouTube, Vimeo ou um arquivo de vídeo.");
+      return;
+    }
 
     const prescriptionText = prescription.trim();
     const parsed = prescriptionText ? parsePrescriptionLine(prescriptionText) : null;
@@ -1226,6 +1251,7 @@ function CustomExerciseModal({
           name: exerciseName,
           position: nextPosition,
           rest_seconds: 90,
+          video_url: trimmedVideo || null,
         })
         .select("id")
         .single();
@@ -1262,6 +1288,28 @@ function CustomExerciseModal({
           <p className="text-[10px] text-muted-foreground mt-1">
             Texto livre — edite série a série depois de adicionar.
           </p>
+        </Field>
+        <Field label="Vídeo de execução (opcional)">
+          <input
+            value={videoUrl}
+            onChange={(e) => setVideoUrl(e.target.value)}
+            placeholder="https://youtube.com/watch?v=… , vimeo.com/… ou https://…/video.mp4"
+            className="field-input text-sm"
+          />
+          {videoInvalid ? (
+            <p className="text-[10px] font-medium text-destructive mt-1">
+              Link inválido. Use YouTube, Vimeo ou um arquivo de vídeo.
+            </p>
+          ) : (
+            <p className="text-[10px] text-muted-foreground mt-1">
+              O aluno assiste ao vídeo direto no app, na tela do treino.
+            </p>
+          )}
+          {!videoInvalid && videoEmbed.kind !== "invalid" && (
+            <div className="mt-2 max-w-xs">
+              <ExerciseVideoPlayer url={trimmedVideo} title="Pré-visualização do vídeo" />
+            </div>
+          )}
         </Field>
         {error && <p className="text-xs text-destructive">{error}</p>}
         <button

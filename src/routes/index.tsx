@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
+import { useEffect, useState } from "react";
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { LogOut } from "lucide-react";
@@ -11,8 +13,13 @@ import { AuthGate } from "@/components/AuthGate";
 import { StudentHome } from "@/components/student/StudentHome";
 
 import { ProfessionalHomeAgenda } from "@/components/professional/ProfessionalHomeAgenda";
-import { ProfessionalInsightsCards } from "@/components/professional/ProfessionalInsightsCards";
+import { ProfessionalDashboardStats } from "@/components/professional/ProfessionalDashboardStats";
+import { GettingStartedCard } from "@/components/professional/GettingStartedCard";
 import { StudentDirectorySection } from "@/components/professional/StudentDirectorySection";
+import { ProfessionalOnboardingWizard } from "@/components/professional/onboarding/ProfessionalOnboardingWizard";
+import { OnboardingBanner } from "@/components/professional/onboarding/OnboardingBanner";
+import { TrialBanner } from "@/components/professional/onboarding/TrialBanner";
+import { FeatureTour, PROFESSIONAL_TOUR } from "@/components/professional/onboarding/FeatureTour";
 
 import { useAuth } from "@/hooks/use-auth";
 import { useDisplayName } from "@/hooks/use-display-name";
@@ -22,7 +29,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatAppRole } from "@/lib/labels";
 
 import { fetchMyStudents } from "@/lib/students";
-import { fetchProfessionalInsights } from "@/lib/professional-analytics";
+import { fetchProfessionalDashboard } from "@/lib/professional-analytics";
+import { fetchOnboardingState, completeTour } from "@/lib/professional-onboarding";
 
 
 
@@ -93,12 +101,36 @@ function HomeInner() {
 
 
   const {
-    data: insights,
+    data: dashboard,
   } = useQuery({
-    queryKey: ["professionalInsights", user?.id],
+    queryKey: ["professionalDashboard", user?.id],
     enabled: !!user?.id && !authLoading && isProfessional,
-    queryFn: () => fetchProfessionalInsights(user!.id),
+    queryFn: () => fetchProfessionalDashboard(user!.id),
   });
+
+  const { data: onboarding } = useQuery({
+    queryKey: ["onboardingState", user?.id],
+    enabled: !!user?.id && !authLoading && isProfessional,
+    queryFn: () => fetchOnboardingState(user!.id),
+  });
+
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [runTour, setRunTour] = useState(false);
+
+  useEffect(() => {
+    if (onboarding && !onboarding.completedAt && !onboarding.skipped) {
+      setWizardOpen(true);
+    }
+  }, [onboarding]);
+
+  const needsOnboarding = Boolean(onboarding && !onboarding.completedAt);
+
+  const sub = onboarding?.subscription;
+  const trialDaysLeft =
+    sub && sub.status === "trial" && sub.trial_ends_at
+      ? Math.max(0, Math.ceil((new Date(sub.trial_ends_at).getTime() - Date.now()) / 86400000))
+      : null;
+  const showTrialBanner = !needsOnboarding && trialDaysLeft !== null;
 
 
 
@@ -130,13 +162,43 @@ function HomeInner() {
 
   }
 
+  function handleWizardFinished() {
+    setWizardOpen(false);
+    void qc.invalidateQueries({ queryKey: ["onboardingState", user?.id] });
+    if (onboarding && !onboarding.tourCompletedAt) setRunTour(true);
+  }
+
+  function handleWizardSkip() {
+    setWizardOpen(false);
+    void qc.invalidateQueries({ queryKey: ["onboardingState", user?.id] });
+  }
+
+  async function handleTourFinish() {
+    setRunTour(false);
+    if (!user?.id) return;
+    try {
+      await completeTour(user.id);
+    } catch {
+      // ignore
+    }
+    void qc.invalidateQueries({ queryKey: ["onboardingState", user.id] });
+  }
+
 
 
   return (
 
+    <>
+
     <AppShell>
 
-      <header className="bg-gradient-hero px-5 pt-12 pb-4">
+      {needsOnboarding && <OnboardingBanner onOpen={() => setWizardOpen(true)} />}
+
+      {showTrialBanner && trialDaysLeft !== null && (
+        <TrialBanner daysLeft={trialDaysLeft} onSubscribe={() => setWizardOpen(true)} />
+      )}
+
+      <header data-tour="home" className="bg-gradient-hero px-5 pt-12 pb-4">
 
         <div className="flex items-center justify-between">
 
@@ -186,17 +248,21 @@ function HomeInner() {
 
       </header>
 
-      {insights && <ProfessionalInsightsCards insights={insights} />}
+      {dashboard && <GettingStartedCard data={dashboard} />}
+
+      {dashboard && <ProfessionalDashboardStats data={dashboard} />}
 
       {user?.id && (
         <div className="md:grid md:grid-cols-2 md:gap-6 md:px-5 md:pb-8">
-          <ProfessionalHomeAgenda
-            personalId={user.id}
-            students={students.map((s) => ({
-              id: s.id,
-              full_name: s.full_name,
-            }))}
-          />
+          <div data-tour="agenda">
+            <ProfessionalHomeAgenda
+              personalId={user.id}
+              students={students.map((s) => ({
+                id: s.id,
+                full_name: s.full_name,
+              }))}
+            />
+          </div>
           <StudentDirectorySection
             personalId={user.id}
             students={students}
@@ -207,6 +273,21 @@ function HomeInner() {
       )}
 
     </AppShell>
+
+    {wizardOpen && user?.id && (
+      <ProfessionalOnboardingWizard
+        userId={user.id}
+        firstName={firstName}
+        onFinished={handleWizardFinished}
+        onSkip={handleWizardSkip}
+      />
+    )}
+
+    {runTour && (
+      <FeatureTour steps={PROFESSIONAL_TOUR} onFinish={handleTourFinish} />
+    )}
+
+    </>
 
   );
 
