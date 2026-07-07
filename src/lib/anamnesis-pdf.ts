@@ -1,13 +1,21 @@
 import {
   buildAssessmentMetrics,
   buildComparativeSections,
+  CIRCUMFERENCE_FIELDS,
   formatAssessmentDate,
   formatAssessmentNumber,
+  parseMeasurements,
+  SKINFOLD_FIELDS,
 } from "@/lib/anthropometry";
 import { resolveAnamnesisComparativePair } from "@/lib/assessment-comparative";
 import { drawComparativeTable } from "@/lib/assessment-report-pdf";
-import { createPdfWriter } from "@/lib/pdf-writer";
+import { createPdfWriter, type PdfWriter } from "@/lib/pdf-writer";
 import type { AnamnesisRow } from "@/lib/anamnesis";
+import {
+  SMOKING_OPTIONS,
+  STRESS_OPTIONS,
+  TRAINING_EXPERIENCE_OPTIONS,
+} from "@/lib/anamnesis-form";
 import {
   ACTIVITY_OPTIONS,
   GOAL_OPTIONS,
@@ -25,6 +33,27 @@ function labelGoal(id: string) {
 
 function sexLabel(sex: string) {
   return sex === "F" ? "Feminino" : "Masculino";
+}
+
+function optionLabel<T extends string>(
+  options: { id: T; label: string }[],
+  id: string | null | undefined,
+) {
+  if (!id) return null;
+  return options.find((o) => o.id === id)?.label ?? id;
+}
+
+function writeOptionalLine(writer: PdfWriter, label: string, value: string | null | undefined) {
+  const text = value?.trim();
+  if (!text) return;
+  writer.writeLine(`${label}: ${text}`, { size: 9, gap: 4 });
+}
+
+function writeOptionalBlock(writer: PdfWriter, label: string, value: string | null | undefined) {
+  const text = value?.trim();
+  if (!text) return;
+  writer.writeLine(`${label}:`, { bold: true, size: 9, gap: 3 });
+  writer.writeLine(text, { size: 9, gap: 4 });
 }
 
 export async function downloadAnamnesisPdf(input: {
@@ -52,15 +81,89 @@ export async function downloadAnamnesisPdf(input: {
   writer.writeLine(`Altura: ${formatAssessmentNumber(Number(anamnesis.height_cm), 0)} cm`, { size: 9, gap: 4 });
   writer.writeLine(`Atividade: ${labelActivity(anamnesis.activity_level)}`, { size: 9, gap: 4 });
   writer.writeLine(`Objetivo: ${labelGoal(anamnesis.goal)}`, { size: 9, gap: 4 });
+  writeOptionalLine(writer, "Profissão / rotina", anamnesis.occupation);
 
-  if (anamnesis.restrictions?.trim()) {
-    writer.writeLine("Restrições alimentares:", { bold: true, size: 9, gap: 3 });
-    writer.writeLine(anamnesis.restrictions.trim(), { size: 9, gap: 4 });
+  writer.y += 2;
+  writer.writeLine("EXAME FÍSICO / ANTROPOMETRIA", { bold: true, size: 11, gap: 5 });
+  if (anamnesis.body_fat_pct != null) {
+    writer.writeLine(`% Gordura: ${formatAssessmentNumber(Number(anamnesis.body_fat_pct))}%`, { size: 9, gap: 4 });
   }
-  if (anamnesis.clinical_notes?.trim()) {
-    writer.writeLine("Observações clínicas:", { bold: true, size: 9, gap: 3 });
-    writer.writeLine(anamnesis.clinical_notes.trim(), { size: 9, gap: 4 });
+  if (anamnesis.lean_mass_kg != null) {
+    writer.writeLine(`Massa magra: ${formatAssessmentNumber(Number(anamnesis.lean_mass_kg))} kg`, {
+      size: 9,
+      gap: 4,
+    });
   }
+  const parsedMeasurements = parseMeasurements(anamnesis.measurements);
+  for (const field of CIRCUMFERENCE_FIELDS) {
+    const value = parsedMeasurements.circumferences?.[field.key];
+    if (value != null) {
+      writer.writeLine(`${field.label}: ${formatAssessmentNumber(value)} cm`, { size: 9, gap: 4 });
+    }
+  }
+  for (const field of SKINFOLD_FIELDS) {
+    const value = parsedMeasurements.skinfolds?.[field.key];
+    if (value != null) {
+      writer.writeLine(`${field.label}: ${formatAssessmentNumber(value)} mm`, { size: 9, gap: 4 });
+    }
+  }
+
+  writer.y += 2;
+  writer.writeLine("ESTILO DE VIDA", { bold: true, size: 11, gap: 5 });
+  if (anamnesis.sleep_hours != null) {
+    writer.writeLine(`Sono: ${formatAssessmentNumber(Number(anamnesis.sleep_hours), 1)} h/noite`, {
+      size: 9,
+      gap: 4,
+    });
+  }
+  writeOptionalLine(writer, "Estresse", optionLabel(STRESS_OPTIONS, anamnesis.stress_level));
+  writeOptionalLine(writer, "Disponibilidade semanal", anamnesis.weekly_availability);
+  writeOptionalLine(writer, "Tabagismo", optionLabel(SMOKING_OPTIONS, anamnesis.smoking));
+  writeOptionalLine(writer, "Álcool", anamnesis.alcohol_use);
+  if (anamnesis.meals_per_day != null) {
+    writer.writeLine(`Refeições por dia: ${anamnesis.meals_per_day}`, { size: 9, gap: 4 });
+  }
+
+  writer.y += 2;
+  writer.writeLine("HISTÓRICO DE SAÚDE", { bold: true, size: 11, gap: 5 });
+  writeOptionalBlock(writer, "Doenças / condições", anamnesis.medical_history);
+  writeOptionalBlock(writer, "Medicamentos", anamnesis.medications);
+  writeOptionalBlock(writer, "Lesões", anamnesis.injuries);
+  writeOptionalBlock(writer, "Cirurgias", anamnesis.surgeries);
+  writeOptionalBlock(writer, "Histórico familiar", anamnesis.family_history);
+  writeOptionalBlock(writer, "Dores / limitações", anamnesis.pain_or_limitations);
+  if (anamnesis.par_q_cleared === false) {
+    writer.writeLine("PAR-Q: requer atenção / liberação médica", { size: 9, gap: 4 });
+    writeOptionalBlock(writer, "Detalhes PAR-Q", anamnesis.par_q_notes);
+  } else {
+    writer.writeLine("PAR-Q: liberado para atividade física", { size: 9, gap: 4 });
+  }
+
+  writer.y += 2;
+  writer.writeLine("TREINO", { bold: true, size: 11, gap: 5 });
+  writeOptionalLine(
+    writer,
+    "Experiência",
+    optionLabel(TRAINING_EXPERIENCE_OPTIONS, anamnesis.training_experience),
+  );
+  if (anamnesis.training_days_per_week != null) {
+    writer.writeLine(`Dias de treino / semana: ${anamnesis.training_days_per_week}`, { size: 9, gap: 4 });
+  }
+  writeOptionalLine(writer, "Local de treino", anamnesis.training_location);
+  writeOptionalBlock(writer, "Histórico de treinos", anamnesis.training_history);
+
+  writer.y += 2;
+  writer.writeLine("ALIMENTAÇÃO", { bold: true, size: 11, gap: 5 });
+  writeOptionalBlock(writer, "Restrições / alergias", anamnesis.restrictions);
+  writeOptionalBlock(writer, "Suplementos", anamnesis.supplements_used);
+  writeOptionalBlock(writer, "Preferências alimentares", anamnesis.food_preferences);
+  writeOptionalBlock(writer, "Digestão", anamnesis.digestion_notes);
+
+  writer.y += 2;
+  writer.writeLine("MOTIVAÇÃO", { bold: true, size: 11, gap: 5 });
+  writeOptionalBlock(writer, "Principal motivação", anamnesis.main_motivation);
+  writeOptionalBlock(writer, "Expectativas", anamnesis.expectations);
+  writeOptionalBlock(writer, "Observações clínicas", anamnesis.clinical_notes);
 
   writer.y += 3;
   writer.writeLine("METAS CALCULADAS", { bold: true, size: 11, gap: 5 });

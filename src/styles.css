@@ -133,6 +133,14 @@
   @apply w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring;
 }
 
+.field-input-compact {
+  @apply rounded-md px-2 py-1 text-xs min-h-8 focus:ring-1;
+}
+
+.field-textarea-compact {
+  @apply min-h-[2.75rem] resize-y leading-snug;
+}
+
 /* Sem setas ↑↓ em campos numéricos (quantidade, etc.) */
 input[type="number"] {
   -moz-appearance: textfield;

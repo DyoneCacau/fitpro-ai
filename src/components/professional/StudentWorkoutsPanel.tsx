@@ -12,6 +12,7 @@ import {
   Plus,
   Search,
   Trash2,
+  Video,
   X,
 } from "lucide-react";
 import { WorkoutRoutineBar } from "@/components/professional/WorkoutRoutineBar";
@@ -51,6 +52,8 @@ type ExerciseRow = {
   position: number;
   rest_seconds: number | null;
   note: string | null;
+  video_url: string | null;
+  image: string | null;
   exercise_sets: SetRow[] | null;
 };
 
@@ -119,7 +122,7 @@ export function StudentWorkoutsPanel({
       let q = supabase
         .from("workouts")
         .select(
-          "id, letter, title, muscles, category, estimated_minutes, exercises(id, name, muscle_group, position, rest_seconds, note, exercise_sets(id, position, target_reps, target_load, set_type, note))",
+          "id, letter, title, muscles, category, estimated_minutes, exercises(id, name, muscle_group, position, rest_seconds, note, video_url, image, exercise_sets(id, position, target_reps, target_load, set_type, note))",
         )
         .eq("personal_id", personalId)
         .order("letter");
@@ -634,6 +637,11 @@ function ExerciseCard({
         </div>
 
         <ExerciseNoteField exerciseId={exercise.id} note={exercise.note} onChanged={onChanged} />
+        <ExerciseVideoField
+          exerciseId={exercise.id}
+          videoUrl={exercise.video_url}
+          onChanged={onChanged}
+        />
 
         <div className="flex items-center gap-2">
           <label className="text-[10px] text-muted-foreground shrink-0">Intervalo (s)</label>
@@ -753,6 +761,80 @@ function ExerciseNoteField({
           className="text-[10px] text-muted-foreground underline"
         >
           Remover observação
+        </button>
+      )}
+    </div>
+  );
+}
+
+function ExerciseVideoField({
+  exerciseId,
+  videoUrl,
+  onChanged,
+}: {
+  exerciseId: string;
+  videoUrl: string | null;
+  onChanged: () => void;
+}) {
+  const [open, setOpen] = useState(!!videoUrl);
+  const [draft, setDraft] = useState(videoUrl ?? "");
+
+  useEffect(() => {
+    setDraft(videoUrl ?? "");
+    setOpen(!!videoUrl);
+  }, [exerciseId, videoUrl]);
+
+  const save = useMutation({
+    mutationFn: async (value: string | null) => {
+      const { error } = await supabase
+        .from("exercises")
+        .update({ video_url: value })
+        .eq("id", exerciseId);
+      if (error) throw error;
+    },
+    onSuccess: onChanged,
+  });
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-1.5 text-[10px] font-semibold text-primary"
+      >
+        <Video className="size-3" />
+        Adicionar vídeo de execução
+      </button>
+    );
+  }
+
+  return (
+    <div className="space-y-1">
+      <label className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1">
+        <Video className="size-3" /> Vídeo de execução · YouTube ou link direto (.mp4)
+      </label>
+      <input
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => {
+          const trimmed = draft.trim();
+          save.mutate(trimmed || null);
+          if (!trimmed) setOpen(false);
+        }}
+        placeholder="https://youtube.com/watch?v=… ou https://…/video.mp4"
+        className="field-input text-xs"
+      />
+      {draft.trim() && (
+        <button
+          type="button"
+          onClick={() => {
+            setDraft("");
+            save.mutate(null);
+            setOpen(false);
+          }}
+          className="text-[10px] text-muted-foreground underline"
+        >
+          Remover vídeo
         </button>
       )}
     </div>

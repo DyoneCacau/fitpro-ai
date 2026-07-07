@@ -1,0 +1,27 @@
+-- Campos expandidos da anamnese (visão 360º do aluno)
+
+ALTER TABLE public.anamnesis
+  ADD COLUMN IF NOT EXISTS occupation TEXT,
+  ADD COLUMN IF NOT EXISTS sleep_hours NUMERIC(3, 1),
+  ADD COLUMN IF NOT EXISTS stress_level TEXT,
+  ADD COLUMN IF NOT EXISTS medical_history TEXT,
+  ADD COLUMN IF NOT EXISTS medications TEXT,
+  ADD COLUMN IF NOT EXISTS injuries TEXT,
+  ADD COLUMN IF NOT EXISTS surgeries TEXT,
+  ADD COLUMN IF NOT EXISTS family_history TEXT,
+  ADD COLUMN IF NOT EXISTS smoking TEXT DEFAULT 'nao',
+  ADD COLUMN IF NOT EXISTS alcohol_use TEXT,
+  ADD COLUMN IF NOT EXISTS training_experience TEXT,
+  ADD COLUMN IF NOT EXISTS training_days_per_week INT,
+  ADD COLUMN IF NOT EXISTS training_location TEXT,
+  ADD COLUMN IF NOT EXISTS training_history TEXT,
+  ADD COLUMN IF NOT EXISTS pain_or_limitations TEXT,
+  ADD COLUMN IF NOT EXISTS meals_per_day INT,
+  ADD COLUMN IF NOT EXISTS supplements_used TEXT,
+  ADD COLUMN IF NOT EXISTS food_preferences TEXT,
+  ADD COLUMN IF NOT EXISTS digestion_notes TEXT,
+  ADD COLUMN IF NOT EXISTS main_motivation TEXT,
+  ADD COLUMN IF NOT EXISTS expectations TEXT,
+  ADD COLUMN IF NOT EXISTS weekly_availability TEXT,
+  ADD COLUMN IF NOT EXISTS par_q_cleared BOOLEAN DEFAULT true,
+  ADD COLUMN IF NOT EXISTS par_q_notes TEXT;

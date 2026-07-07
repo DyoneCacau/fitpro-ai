@@ -4,6 +4,7 @@ import { Apple, BookOpen, ChefHat, ChevronDown, ClipboardList, Repeat2, Shopping
 import { EmptyState, SubPageHeader } from "@/components/student/FeatureHub";
 import { PremiumCollapsible } from "@/components/student/ui/PremiumCollapsible";
 import { DietPlanToolbar } from "@/components/diet/DietPlanToolbar";
+import { defaultDietWeekDay, DietWeekDayTabs } from "@/components/diet/DietWeekDayTabs";
 import { MealPlanCard } from "@/components/diet/MealPlanCard";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -92,6 +93,7 @@ function MealPlanView({
   const { user } = useAuth();
   const qc = useQueryClient();
   const today = useMemo(() => todayIsoDate(), []);
+  const [selectedDay, setSelectedDay] = useState(defaultDietWeekDay);
   const meals = (plan.diet_meals ?? [])
     .slice()
     .sort((a, b) => SLOT_ORDER.indexOf(a.slot) - SLOT_ORDER.indexOf(b.slot));
@@ -115,72 +117,49 @@ function MealPlanView({
 
   return (
     <>
-      <header className="bg-gradient-hero px-5 pt-12 pb-5">
+      <header className="bg-gradient-hero px-5 pt-12 pb-4 border-b border-border/40">
         <h1 className="text-xl font-black text-foreground">Plano Alimentar</h1>
-        <p className="text-sm font-semibold text-primary mt-1 truncate">{plan.name}</p>
-        <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-          Minhas refeições · marque o ✓ quando realizar · expanda para ver detalhes
-        </p>
+        {plan.name && plan.name !== "Plano alimentar" && (
+          <p className="text-xs text-muted-foreground mt-1 truncate">{plan.name}</p>
+        )}
+        <div className="mt-4">
+          <DietWeekDayTabs selectedDay={selectedDay} onSelectDay={setSelectedDay} />
+        </div>
       </header>
 
-      <div className="px-5 py-4 space-y-4 pb-8">
-        {plan.notes?.trim() && (
-          <PremiumCollapsible title="Observações" icon={ClipboardList}>
-            <p className="whitespace-pre-wrap leading-relaxed">{plan.notes.trim()}</p>
-          </PremiumCollapsible>
-        )}
+      <div className="px-5 py-4 space-y-3 pb-8">
         {meals.length > 0 && (
-          <div className="rounded-2xl border border-border bg-card p-4">
-            <div className="flex items-end justify-between gap-3 mb-3">
-              <div>
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Hoje</p>
-                <p className="text-lg font-bold">
-                  {completedCount}/{meals.length}{" "}
-                  <span className="text-sm font-semibold text-muted-foreground">refeições realizadas</span>
-                </p>
-              </div>
-              <p className="text-xs text-primary font-bold">
-                {completedCount === meals.length ? "Parabéns!" : "Continue assim"}
-              </p>
-            </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+          <div className="flex items-center justify-between gap-2 text-xs">
+            <span className="text-muted-foreground">
+              {completedCount}/{meals.length} refeições hoje
+            </span>
+            <div className="flex-1 max-w-[8rem] h-1.5 overflow-hidden rounded-full bg-secondary">
               <div
-                className="h-full bg-gradient-primary transition-all"
+                className="h-full bg-primary transition-all"
                 style={{ width: `${meals.length ? (completedCount / meals.length) * 100 : 0}%` }}
               />
             </div>
           </div>
         )}
-        {(plan.kcal_target ?? plan.protein_g ?? plan.carbs_g ?? plan.fat_g) && (
-          <div className="rounded-2xl border border-border bg-card p-4">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Metas diárias</p>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              {plan.kcal_target != null && (
-                <p>
-                  <span className="text-muted-foreground">Calorias: </span>
-                  <span className="font-semibold">{Math.round(plan.kcal_target)} kcal</span>
-                </p>
-              )}
-              {plan.protein_g != null && (
-                <p>
-                  <span className="text-muted-foreground">Proteína: </span>
-                  <span className="font-semibold">{Math.round(plan.protein_g)} g</span>
-                </p>
-              )}
-              {plan.carbs_g != null && (
-                <p>
-                  <span className="text-muted-foreground">Carbo: </span>
-                  <span className="font-semibold">{Math.round(plan.carbs_g)} g</span>
-                </p>
-              )}
-              {plan.fat_g != null && (
-                <p>
-                  <span className="text-muted-foreground">Gordura: </span>
-                  <span className="font-semibold">{Math.round(plan.fat_g)} g</span>
-                </p>
-              )}
-            </div>
-          </div>
+
+        {(plan.kcal_target ?? plan.protein_g) && (
+          <p className="text-[11px] text-muted-foreground">
+            {plan.kcal_target != null && <span>{Math.round(plan.kcal_target)} kcal</span>}
+            {plan.protein_g != null && (
+              <span>
+                {plan.kcal_target != null ? " · " : ""}
+                P {Math.round(plan.protein_g)}g
+              </span>
+            )}
+            {plan.carbs_g != null && <span> · C {Math.round(plan.carbs_g)}g</span>}
+            {plan.fat_g != null && <span> · G {Math.round(plan.fat_g)}g</span>}
+          </p>
+        )}
+
+        {plan.notes?.trim() && (
+          <PremiumCollapsible title="Observações" icon={ClipboardList}>
+            <p className="whitespace-pre-wrap text-xs leading-relaxed">{plan.notes.trim()}</p>
+          </PremiumCollapsible>
         )}
 
         <DietPlanToolbar
@@ -191,8 +170,7 @@ function MealPlanView({
           showSaveTemplate={false}
         />
 
-        <div className="space-y-3">
-          <h2 className="text-sm font-black text-foreground">Minhas refeições</h2>
+        <div className="space-y-2">
           {meals.length === 0 ? (
             <EmptyState
               icon={Apple}
@@ -200,12 +178,12 @@ function MealPlanView({
               description="Seu plano ainda não possui refeições cadastradas."
             />
           ) : (
-            meals.map((m, idx) => (
+            meals.map((m) => (
               <MealPlanCard
                 key={m.id}
                 meal={m}
-                mealIndex={idx}
                 planSubstitutions={substitutions}
+                defaultExpanded={m.slot === "almoco"}
                 completed={completedMealIds.has(m.id)}
                 completing={
                   toggleCompletion.isPending && toggleCompletion.variables?.mealId === m.id

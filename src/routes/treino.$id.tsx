@@ -1,8 +1,9 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Check, ChevronLeft, ClipboardList, Dumbbell, Loader2, Timer } from "lucide-react";
+import { Check, ChevronLeft, ClipboardList, Dumbbell, Loader2, Timer, Video } from "lucide-react";
 import { AuthGate } from "@/components/AuthGate";
+import { ExerciseVideoPlayer } from "@/components/student/ExerciseVideoPlayer";
 import { PremiumCollapsible } from "@/components/student/ui/PremiumCollapsible";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -27,6 +28,8 @@ type DbExercise = {
   position: number;
   rest_seconds: number | null;
   note: string | null;
+  video_url: string | null;
+  image: string | null;
   exercise_sets: Array<{
     id: string;
     position: number;
@@ -84,7 +87,7 @@ function WorkoutPage() {
       const { data, error: qError } = await supabase
         .from("workouts")
         .select(
-          "id, letter, title, muscles, estimated_minutes, exercises(id, name, position, rest_seconds, note, exercise_sets(id, position, target_reps, target_load, set_type, note))",
+          "id, letter, title, muscles, estimated_minutes, exercises(id, name, position, rest_seconds, note, video_url, image, exercise_sets(id, position, target_reps, target_load, set_type, note))",
         )
         .eq("id", id)
         .eq("is_active", true)
@@ -243,6 +246,14 @@ function ExerciseRow({
 
       {showDetail && (
         <div className="mt-3 space-y-2 rounded-xl bg-muted/30 p-3 text-xs text-muted-foreground">
+          {exercise.video_url?.trim() && (
+            <div className="space-y-1.5">
+              <p className="font-semibold text-foreground flex items-center gap-1">
+                <Video className="size-3.5 text-primary" /> Execução
+              </p>
+              <ExerciseVideoPlayer url={exercise.video_url.trim()} title={exercise.name} />
+            </div>
+          )}
           <p>
             <span className="font-semibold text-foreground">Séries: </span>
             {formatSeriesLabel(sets)}

@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { HealthDashboardCard } from "@/components/student/wearables/HealthDashboardCard";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ClipboardList, FlaskConical, FolderOpen, Loader2, Pencil, Ruler, Trash2 } from "lucide-react";
 import { AnthropometricForm } from "@/components/assessment/AnthropometricForm";
+import { BodyProfileMap } from "@/components/assessment/BodyProfileMap";
 import { AssessmentDetailView } from "@/components/assessment/AssessmentDetailView";
 import {
   ComparativeReportView,
@@ -18,6 +19,9 @@ import {
   sortAssessmentsOldestFirst,
 } from "@/lib/anthropometry";
 import type { Sex } from "@/lib/nutrition-calculator";
+import { calculateBmr } from "@/lib/nutrition-calculator";
+import { fetchStudentAnamnesis } from "@/lib/anamnesis";
+import { bodyProfileSourceLabel, resolveBodyProfileInput } from "@/lib/body-profile-source";
 import {
   addStudentLabExam,
   addStudentMaterial,
@@ -97,8 +101,29 @@ function AssessmentsSection({
     queryFn: () => fetchStudentAnamnesisContext(alunoId, personalId),
   });
 
+  const { data: anamnesisRow } = useQuery({
+    queryKey: ["anamnesis", alunoId],
+    queryFn: () => fetchStudentAnamnesis(alunoId),
+  });
+
   const sex = (anamnesis?.sex as Sex | undefined) ?? "M";
   const age = anamnesis?.age ?? undefined;
+
+  const bodyProfile = useMemo(
+    () =>
+      resolveBodyProfileInput({
+        sex,
+        age,
+        anamnesis: anamnesisRow ?? null,
+        assessments,
+      }),
+    [sex, age, anamnesisRow, assessments],
+  );
+
+  const bmr = useMemo(() => {
+    if (!bodyProfile?.weightKg || !bodyProfile.heightCm || age == null) return null;
+    return Math.round(calculateBmr({ sex, age, weightKg: bodyProfile.weightKg, heightCm: bodyProfile.heightCm }));
+  }, [bodyProfile, sex, age]);
   const sorted = sortAssessmentsOldestFirst(assessments);
   const comparePair = compareAssessment ? pickComparativePair(assessments, compareAssessment) : null;
 
@@ -224,6 +249,14 @@ function AssessmentsSection({
           </button>
         </div>
       </div>
+
+      {bodyProfile && (
+        <BodyProfileMap
+          profile={bodyProfile}
+          bmr={bmr}
+          sourceLabel={bodyProfileSourceLabel({ assessments })}
+        />
+      )}
 
       {formOpen && (
         <AnthropometricForm

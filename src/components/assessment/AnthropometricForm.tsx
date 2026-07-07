@@ -11,6 +11,14 @@ import {
   formatAssessmentNumber,
   formatHeight,
 } from "@/lib/anthropometry";
+import {
+  CompactBlockField,
+  CompactMetricField,
+  CompactMetricGrid,
+  CompactSectionLabel,
+  compactInputClass,
+  compactTextareaClass,
+} from "@/components/forms/CompactFormFields";
 import type { Sex } from "@/lib/nutrition-calculator";
 import type { Assessment } from "@/lib/tracking";
 import { fetchStudentAnamnesisContext } from "@/lib/tracking";
@@ -174,64 +182,88 @@ export function AnthropometricForm({
         </p>
       </div>
 
-      <div className="p-4 space-y-5">
-        <section className="space-y-3">
-          <SectionTitle>Dados gerais</SectionTitle>
-          <div className="grid grid-cols-2 gap-2">
-            <Field label="Data" type="date" value={assessedAt} onChange={setAssessedAt} />
-            <Field label="Peso (kg)" value={weight} onChange={setWeight} inputMode="decimal" />
-            <Field label="Altura (cm)" value={height} onChange={setHeight} inputMode="decimal" />
-            <Field
-              label="% Gordura (opcional)"
-              value={bodyFat}
-              onChange={setBodyFat}
-              inputMode="decimal"
-              hint="Calculado pelas dobras se vazio"
+      <div className="p-3 space-y-3">
+        <CompactSectionLabel>Dados gerais</CompactSectionLabel>
+        <div className="grid grid-cols-2 gap-x-3 gap-y-0 sm:grid-cols-4">
+          <CompactBlockField label="Data">
+            <input
+              type="date"
+              value={assessedAt}
+              onChange={(e) => setAssessedAt(e.target.value)}
+              className={`${compactInputClass} text-left`}
             />
-          </div>
-        </section>
+          </CompactBlockField>
+          <CompactBlockField label="Peso (kg)">
+            <input
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+              inputMode="decimal"
+              className={compactInputClass}
+            />
+          </CompactBlockField>
+          <CompactBlockField label="Altura (cm)">
+            <input
+              value={height}
+              onChange={(e) => setHeight(e.target.value)}
+              inputMode="decimal"
+              className={compactInputClass}
+            />
+          </CompactBlockField>
+          <CompactBlockField label="% Gordura" hint="Calc. pelas dobras">
+            <input
+              value={bodyFat}
+              onChange={(e) => setBodyFat(e.target.value)}
+              inputMode="decimal"
+              placeholder="—"
+              className={compactInputClass}
+            />
+          </CompactBlockField>
+        </div>
 
-        <section className="space-y-3">
-          <SectionTitle>Circunferências (cm)</SectionTitle>
-          <div className="grid grid-cols-2 gap-2">
-            {CIRCUMFERENCE_FIELDS.map((field) => (
-              <Field
-                key={field.key}
-                label={field.label}
+        <CompactSectionLabel>Circunferências (cm)</CompactSectionLabel>
+        <CompactMetricGrid>
+          {CIRCUMFERENCE_FIELDS.map((field) => (
+            <CompactMetricField key={field.key} label={field.label}>
+              <input
                 value={circumferences[field.key]}
-                onChange={(v) => setCircumference(field.key, v)}
+                onChange={(e) => setCircumference(field.key, e.target.value)}
                 inputMode="decimal"
+                className={compactInputClass}
               />
-            ))}
-          </div>
-        </section>
+            </CompactMetricField>
+          ))}
+        </CompactMetricGrid>
 
-        <section className="space-y-3">
-          <SectionTitle>Dobras cutâneas (mm)</SectionTitle>
-          <div className="grid grid-cols-2 gap-2">
-            {SKINFOLD_FIELDS.map((field) => (
-              <Field
-                key={field.key}
-                label={field.label}
+        <CompactSectionLabel>Dobras cutâneas (mm)</CompactSectionLabel>
+        <CompactMetricGrid>
+          {SKINFOLD_FIELDS.map((field) => (
+            <CompactMetricField key={field.key} label={field.label}>
+              <input
                 value={skinfolds[field.key]}
-                onChange={(v) => setSkinfold(field.key, v)}
+                onChange={(e) => setSkinfold(field.key, e.target.value)}
                 inputMode="decimal"
+                className={compactInputClass}
               />
-            ))}
-          </div>
-        </section>
+            </CompactMetricField>
+          ))}
+        </CompactMetricGrid>
 
-        <section>
-          <Field label="Observações" value={notes} onChange={setNotes} multiline />
-        </section>
+        <CompactBlockField label="Observações">
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={2}
+            className={compactTextareaClass}
+          />
+        </CompactBlockField>
 
         {(preview.bmi != null || preview.bodyFatPct != null) && (
-          <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2">
-            <div className="flex items-center gap-2 text-primary">
-              <Calculator className="size-4" />
-              <p className="text-xs font-bold">Prévia calculada</p>
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-2 space-y-1">
+            <div className="flex items-center gap-1.5 text-primary">
+              <Calculator className="size-3.5" />
+              <p className="text-[10px] font-bold">Prévia</p>
             </div>
-            <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+            <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px]">
               {preview.bmi != null && (
                 <PreviewRow label="IMC" value={`${formatAssessmentNumber(preview.bmi)} · ${preview.bmiStatus}`} />
               )}
@@ -253,6 +285,9 @@ export function AnthropometricForm({
                   value={`${formatAssessmentNumber(preview.waistHipRatio)} · ${preview.waistHipRisk}`}
                 />
               )}
+              {preview.bodyDensity != null && (
+                <PreviewRow label="Densidade corporal" value={formatAssessmentNumber(preview.bodyDensity)} />
+              )}
               {preview.skinfoldSum != null && (
                 <PreviewRow label="Soma dobras" value={`${formatAssessmentNumber(preview.skinfoldSum)} mm`} />
               )}
@@ -264,7 +299,7 @@ export function AnthropometricForm({
         )}
       </div>
 
-      <div className="border-t border-border p-4 space-y-3">
+      <div className="border-t border-border p-3 space-y-2">
         {saveError && (
           <p className="text-xs text-destructive rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2">
             {saveError}
@@ -283,7 +318,7 @@ export function AnthropometricForm({
         <button
           type="submit"
           disabled={saving}
-          className="flex-1 rounded-xl bg-primary text-primary-foreground py-2.5 text-sm font-semibold disabled:opacity-50"
+          className="flex-1 rounded-xl bg-primary text-primary-foreground py-2 text-sm font-semibold disabled:opacity-50"
         >
           {saving ? (
             <span className="inline-flex items-center gap-2">
@@ -298,52 +333,6 @@ export function AnthropometricForm({
         </div>
       </div>
     </form>
-  );
-}
-
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-[11px] font-bold uppercase tracking-wider text-primary">{children}</p>
-  );
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-  type = "text",
-  inputMode,
-  multiline,
-  hint,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  type?: string;
-  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
-  multiline?: boolean;
-  hint?: string;
-}) {
-  return (
-    <label className="block">
-      <span className="text-[10px] font-semibold uppercase text-muted-foreground">{label}</span>
-      {multiline ? (
-        <textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="field-input mt-1 min-h-[64px] text-xs"
-        />
-      ) : (
-        <input
-          type={type}
-          inputMode={inputMode}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="field-input mt-1 text-xs"
-        />
-      )}
-      {hint && <span className="text-[9px] text-muted-foreground">{hint}</span>}
-    </label>
   );
 }
 

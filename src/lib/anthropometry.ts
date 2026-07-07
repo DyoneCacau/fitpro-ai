@@ -357,7 +357,6 @@ export function buildComparativeSections(
   for (const field of CIRCUMFERENCE_FIELDS) {
     const b = before.circumferences[field.key] ?? null;
     const a = after.circumferences[field.key] ?? null;
-    if (b == null && a == null) continue;
     circumferenceRows.push({
       label: field.label,
       ...formatComparativeCell(b, a, (v) => `${formatAssessmentNumber(v)} cm`),
@@ -368,7 +367,6 @@ export function buildComparativeSections(
   for (const field of SKINFOLD_FIELDS) {
     const b = before.skinfolds[field.key] ?? null;
     const a = after.skinfolds[field.key] ?? null;
-    if (b == null && a == null) continue;
     skinfoldRows.push({
       label: field.label,
       lowerIsBetter: true,
@@ -377,10 +375,8 @@ export function buildComparativeSections(
   }
 
   const sections: ComparativeSection[] = [{ rows: bodyCompositionRows(before, after) }];
-  if (circumferenceRows.length > 0) {
-    sections.push({ title: "Circunferências", rows: circumferenceRows });
-  }
-  if (skinfoldRows.length > 0) {
+  sections.push({ title: "Circunferências", rows: circumferenceRows });
+  if (skinfoldRows.some((row) => row.before !== "—" || row.after !== "—")) {
     sections.push({ title: "Dobras Cutâneas", rows: skinfoldRows });
   }
   return sections;

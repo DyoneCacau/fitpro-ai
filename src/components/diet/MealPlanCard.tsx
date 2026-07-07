@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Check, CheckCircle2, ChevronDown, Clock, Loader2, Repeat2 } from "lucide-react";
-import { TimelineItem, TimelineList } from "@/components/student/ui/PremiumCollapsible";
+import { Check, CheckCircle2, ChevronDown, Loader2, Repeat2 } from "lucide-react";
 import {
   formatFoodItemDietbox,
   getMealMainItems,
@@ -13,7 +12,6 @@ import { cn } from "@/lib/utils";
 
 export function MealPlanCard({
   meal,
-  mealIndex,
   showSubstitutions = true,
   defaultExpanded = false,
   completed = false,
@@ -36,7 +34,7 @@ export function MealPlanCard({
   const mainItems = getMealMainItems(meal);
   const substGroups = getMealSubstitutionGroups(meal);
   const timeLabel = meal.time_label ?? meta.time;
-  const mealTitle = mealIndex != null ? `Refeição ${mealIndex + 1}` : meta.label;
+  const mealTitle = meta.label;
 
   function planSubsForFood(food: string) {
     const norm = food.trim().toLowerCase();
@@ -54,69 +52,62 @@ export function MealPlanCard({
   return (
     <div
       className={cn(
-        "rounded-2xl border bg-card overflow-hidden shadow-card transition-colors",
-        completed ? "border-emerald-500/40 bg-emerald-500/5" : "border-border",
+        "rounded-xl border bg-card overflow-hidden transition-colors",
+        completed ? "border-emerald-500/35 bg-emerald-500/[0.03]" : "border-border",
       )}
     >
-      <div className="px-4 pt-4 pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-base font-black text-foreground">{mealTitle}</h3>
-              <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-bold text-muted-foreground">
-                <Clock className="size-3" />
-                {timeLabel}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setExpanded((v) => !v)}
-              className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-primary"
-            >
-              {expanded ? "Ocultar" : "Expandir"}
-              <ChevronDown className={cn("size-3.5 transition-transform", expanded && "rotate-180")} />
-            </button>
+      <div className="flex items-stretch">
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="flex flex-1 items-center justify-between gap-3 px-4 py-3.5 text-left min-w-0"
+          aria-expanded={expanded}
+        >
+          <div className="min-w-0">
+            <p className="text-sm font-black text-primary leading-tight">{mealTitle}</p>
+            <p className="text-xs text-muted-foreground mt-0.5 tabular-nums">{timeLabel}</p>
           </div>
+          <ChevronDown
+            className={cn(
+              "size-5 shrink-0 text-muted-foreground transition-transform",
+              expanded && "rotate-180",
+            )}
+          />
+        </button>
 
-          {onToggleComplete && (
-            <button
-              type="button"
-              onClick={onToggleComplete}
-              disabled={completing}
-              className="shrink-0"
-              aria-label={completed ? "Desmarcar refeição" : "Marcar refeição realizada"}
-            >
-              {completing ? (
-                <Loader2 className="size-8 animate-spin text-primary" />
-              ) : (
-                <CheckCircle2
-                  className={cn(
-                    "size-8 transition-colors",
-                    completed
-                      ? "text-emerald-500 fill-emerald-500/20"
-                      : "text-muted-foreground/40",
-                  )}
-                />
-              )}
-            </button>
-          )}
-        </div>
+        {onToggleComplete && (
+          <button
+            type="button"
+            onClick={onToggleComplete}
+            disabled={completing}
+            className="flex items-center px-3 border-l border-border/60 shrink-0"
+            aria-label={completed ? "Desmarcar refeição" : "Marcar refeição realizada"}
+          >
+            {completing ? (
+              <Loader2 className="size-6 animate-spin text-primary" />
+            ) : (
+              <CheckCircle2
+                className={cn(
+                  "size-6 transition-colors",
+                  completed ? "text-emerald-500 fill-emerald-500/20" : "text-muted-foreground/35",
+                )}
+              />
+            )}
+          </button>
+        )}
       </div>
 
       {expanded && (
-        <div className="px-4 pb-4 space-y-4 border-t border-border/60 pt-4">
-          {meal.description?.trim() && (
-            <div className="rounded-xl bg-muted/30 px-3 py-2.5">
-              <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Observações</p>
-              <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">
+        <div className="px-4 pb-4 space-y-3">
+          <div className="rounded-lg bg-muted/40 px-3 py-2.5 space-y-2">
+            {meal.description?.trim() && (
+              <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap border-b border-border/50 pb-2">
                 {meal.description.trim()}
               </p>
-            </div>
-          )}
+            )}
 
-          {mainItems.length > 0 && (
-            <TimelineList>
-              {mainItems.map((item, idx) => {
+            {mainItems.length > 0 ? (
+              mainItems.map((item, idx) => {
                 const mealGroup = substGroups[idx];
                 const planSubs = planSubsForFood(item.food);
                 const hasMealOptions = showSubstitutions && !!mealGroup?.items.length;
@@ -130,79 +121,65 @@ export function MealPlanCard({
                 const isPanelOpen = panelKey != null && openSubstId === panelKey;
 
                 return (
-                  <TimelineItem
-                    key={item.id}
-                    isLast={idx === mainItems.length - 1 && !isPanelOpen}
-                    marker={
-                      completed ? (
-                        <Check className="size-3 text-emerald-500" strokeWidth={3} />
-                      ) : undefined
-                    }
-                  >
+                  <div key={item.id}>
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-medium leading-snug">{formatFoodItemDietbox(item)}</p>
+                      <p className="text-xs leading-relaxed text-foreground flex items-start gap-1.5 min-w-0">
+                        {completed && <Check className="size-3.5 text-emerald-500 shrink-0 mt-0.5" strokeWidth={3} />}
+                        <span>{formatFoodItemDietbox(item)}</span>
+                      </p>
                       {hasOptions && panelKey && (
                         <button
                           type="button"
-                          onClick={() =>
-                            setOpenSubstId((id) => (id === panelKey ? null : panelKey))
-                          }
-                          className="shrink-0 rounded-lg bg-primary/15 px-2.5 py-1 text-[10px] font-bold text-primary"
+                          onClick={() => setOpenSubstId((id) => (id === panelKey ? null : panelKey))}
+                          className="shrink-0 text-[10px] font-bold text-primary underline-offset-2 hover:underline"
                         >
-                          Outras opções
+                          Opções
                         </button>
                       )}
                     </div>
                     {isPanelOpen && hasMealOptions && mealGroup && (
-                      <div className="mt-2 rounded-xl border border-dashed border-primary/30 bg-primary/5 p-2.5 space-y-1">
+                      <div className="mt-1.5 pl-2 border-l-2 border-primary/30 space-y-0.5">
                         <p className="text-[10px] font-bold text-primary flex items-center gap-1">
                           <Repeat2 className="size-3" /> {mealGroup.set.name}
                         </p>
                         {mealGroup.items.map((alt) => (
-                          <p key={alt.id} className="text-xs text-muted-foreground pl-1">
+                          <p key={alt.id} className="text-[11px] text-muted-foreground">
                             {formatFoodItemDietbox(alt)}
                           </p>
                         ))}
                       </div>
                     )}
                     {isPanelOpen && !hasMealOptions && hasPlanOptions && (
-                      <div className="mt-2 rounded-xl border border-dashed border-primary/30 bg-primary/5 p-2.5 space-y-1">
+                      <div className="mt-1.5 pl-2 border-l-2 border-primary/30 space-y-0.5">
                         <p className="text-[10px] font-bold text-primary flex items-center gap-1">
                           <Repeat2 className="size-3" /> Substituições
                         </p>
                         {planSubs.map((s) => (
-                          <p key={s.id} className="text-xs text-muted-foreground pl-1">
+                          <p key={s.id} className="text-[11px] text-muted-foreground">
                             {s.substitute_food}
                             {s.notes?.trim() ? ` · ${s.notes.trim()}` : ""}
                           </p>
                         ))}
                       </div>
                     )}
-                  </TimelineItem>
+                  </div>
                 );
-              })}
-            </TimelineList>
-          )}
-
-          {showSubstitutions && mainItems.length === 0 && substGroups.length > 0 && (
-            <div className="space-y-2">
-              {substGroups.map((group) => (
-                <div
-                  key={group.set.id}
-                  className="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-3"
-                >
-                  <p className="text-xs font-bold text-primary mb-2 flex items-center gap-1">
-                    <Repeat2 className="size-3" /> {group.set.name}
-                  </p>
+              })
+            ) : showSubstitutions && substGroups.length > 0 ? (
+              substGroups.map((group) => (
+                <div key={group.set.id}>
+                  <p className="text-[10px] font-bold text-primary mb-1">{group.set.name}</p>
                   {group.items.map((item) => (
-                    <p key={item.id} className="text-sm leading-snug">
+                    <p key={item.id} className="text-xs leading-relaxed">
                       {formatFoodItemDietbox(item)}
                     </p>
                   ))}
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            ) : (
+              <p className="text-xs text-muted-foreground">Sem alimentos cadastrados.</p>
+            )}
+          </div>
         </div>
       )}
     </div>

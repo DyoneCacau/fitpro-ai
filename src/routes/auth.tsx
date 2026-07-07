@@ -100,6 +100,14 @@ function AuthPage() {
           <span className="text-2xl font-bold tracking-tight">FitPro AI</span>
         </div>
 
+        {mode === "login" && (
+          <p className="text-center text-sm text-muted-foreground -mt-4 mb-6">
+            <Link to="/landing" className="text-primary font-semibold hover:underline">
+              Conheça o FitPro AI →
+            </Link>
+          </p>
+        )}
+
         <div className="bg-card border border-border rounded-2xl p-6 shadow-xl">
           <h1 className="text-2xl font-bold mb-1">
             {mode === "login" ? "Bem-vindo de volta" : "Cadastro profissional"}

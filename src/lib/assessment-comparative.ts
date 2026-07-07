@@ -40,9 +40,9 @@ export function resolveAnamnesisComparativePair(
       assessed_at: anamnesis.assessed_at,
       weight_kg: Number(anamnesis.weight_kg),
       height_cm: Number(anamnesis.height_cm),
-      body_fat_pct: null,
-      lean_mass_kg: null,
-      measurements: null,
+      body_fat_pct: anamnesis.body_fat_pct != null ? Number(anamnesis.body_fat_pct) : null,
+      lean_mass_kg: anamnesis.lean_mass_kg != null ? Number(anamnesis.lean_mass_kg) : null,
+      measurements: anamnesis.measurements ?? null,
       photos: null,
       notes: null,
     };

@@ -11,7 +11,7 @@ import { AuthGate } from "@/components/AuthGate";
 import { MfitStudentHome } from "@/components/student/MfitStudentHome";
 
 import { ProfessionalHomeAgenda } from "@/components/professional/ProfessionalHomeAgenda";
-
+import { ProfessionalInsightsCards } from "@/components/professional/ProfessionalInsightsCards";
 import { StudentDirectorySection } from "@/components/professional/StudentDirectorySection";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatAppRole } from "@/lib/labels";
 
 import { fetchMyStudents } from "@/lib/students";
+import { fetchProfessionalInsights } from "@/lib/professional-analytics";
 
 
 
@@ -87,6 +88,16 @@ function HomeInner() {
 
     queryFn: () => fetchMyStudents(),
 
+  });
+
+
+
+  const {
+    data: insights,
+  } = useQuery({
+    queryKey: ["professionalInsights", user?.id],
+    enabled: !!user?.id && !authLoading && isProfessional,
+    queryFn: () => fetchProfessionalInsights(user!.id),
   });
 
 
@@ -175,7 +186,7 @@ function HomeInner() {
 
       </header>
 
-
+      {insights && <ProfessionalInsightsCards insights={insights} />}
 
       {user?.id && (
         <div className="md:grid md:grid-cols-2 md:gap-6 md:px-5 md:pb-8">

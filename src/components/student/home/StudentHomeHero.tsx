@@ -106,7 +106,7 @@ export function StudentHomeHero() {
           <p className="text-[10px] font-bold uppercase tracking-wider opacity-80">
             Hoje · Treino {todayWorkout.letter}
           </p>
-          <p className="text-xl font-black mt-1 leading-tight">{todayWorkout.title}</p>
+          <p className="text-xl font-black mt-1 leading-tight line-clamp-2">{todayWorkout.title}</p>
           {todayWorkout.muscles && (
             <p className="text-sm opacity-90 mt-0.5">{todayWorkout.muscles}</p>
           )}

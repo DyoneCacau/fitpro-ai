@@ -14,13 +14,16 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PrivacidadeSaudeRouteImport } from './routes/privacidade-saude'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as NotificacoesRouteImport } from './routes/notificacoes'
+import { Route as LandingRouteImport } from './routes/landing'
 import { Route as IntegracoesRouteImport } from './routes/integracoes'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as FinanceiroRouteImport } from './routes/financeiro'
 import { Route as FeedRouteImport } from './routes/feed'
 import { Route as DietaRouteImport } from './routes/dieta'
 import { Route as ClientesRouteImport } from './routes/clientes'
 import { Route as AvaliacoesRouteImport } from './routes/avaliacoes'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AnamneseRouteImport } from './routes/anamnese'
 import { Route as AlunosRouteImport } from './routes/alunos'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as AcompanhamentoRouteImport } from './routes/acompanhamento'
@@ -55,6 +58,11 @@ const NotificacoesRoute = NotificacoesRouteImport.update({
   path: '/notificacoes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LandingRoute = LandingRouteImport.update({
+  id: '/landing',
+  path: '/landing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IntegracoesRoute = IntegracoesRouteImport.update({
   id: '/integracoes',
   path: '/integracoes',
@@ -63,6 +71,11 @@ const IntegracoesRoute = IntegracoesRouteImport.update({
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FinanceiroRoute = FinanceiroRouteImport.update({
+  id: '/financeiro',
+  path: '/financeiro',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FeedRoute = FeedRouteImport.update({
@@ -88,6 +101,11 @@ const AvaliacoesRoute = AvaliacoesRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnamneseRoute = AnamneseRouteImport.update({
+  id: '/anamnese',
+  path: '/anamnese',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AlunosRoute = AlunosRouteImport.update({
@@ -137,13 +155,16 @@ export interface FileRoutesByFullPath {
   '/acompanhamento': typeof AcompanhamentoRoute
   '/agenda': typeof AgendaRoute
   '/alunos': typeof AlunosRouteWithChildren
+  '/anamnese': typeof AnamneseRoute
   '/auth': typeof AuthRoute
   '/avaliacoes': typeof AvaliacoesRoute
   '/clientes': typeof ClientesRoute
   '/dieta': typeof DietaRoute
   '/feed': typeof FeedRoute
+  '/financeiro': typeof FinanceiroRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/integracoes': typeof IntegracoesRouteWithChildren
+  '/landing': typeof LandingRoute
   '/notificacoes': typeof NotificacoesRoute
   '/perfil': typeof PerfilRoute
   '/privacidade-saude': typeof PrivacidadeSaudeRoute
@@ -159,13 +180,16 @@ export interface FileRoutesByTo {
   '/acompanhamento': typeof AcompanhamentoRoute
   '/agenda': typeof AgendaRoute
   '/alunos': typeof AlunosRouteWithChildren
+  '/anamnese': typeof AnamneseRoute
   '/auth': typeof AuthRoute
   '/avaliacoes': typeof AvaliacoesRoute
   '/clientes': typeof ClientesRoute
   '/dieta': typeof DietaRoute
   '/feed': typeof FeedRoute
+  '/financeiro': typeof FinanceiroRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/integracoes': typeof IntegracoesRouteWithChildren
+  '/landing': typeof LandingRoute
   '/notificacoes': typeof NotificacoesRoute
   '/perfil': typeof PerfilRoute
   '/privacidade-saude': typeof PrivacidadeSaudeRoute
@@ -182,13 +206,16 @@ export interface FileRoutesById {
   '/acompanhamento': typeof AcompanhamentoRoute
   '/agenda': typeof AgendaRoute
   '/alunos': typeof AlunosRouteWithChildren
+  '/anamnese': typeof AnamneseRoute
   '/auth': typeof AuthRoute
   '/avaliacoes': typeof AvaliacoesRoute
   '/clientes': typeof ClientesRoute
   '/dieta': typeof DietaRoute
   '/feed': typeof FeedRoute
+  '/financeiro': typeof FinanceiroRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/integracoes': typeof IntegracoesRouteWithChildren
+  '/landing': typeof LandingRoute
   '/notificacoes': typeof NotificacoesRoute
   '/perfil': typeof PerfilRoute
   '/privacidade-saude': typeof PrivacidadeSaudeRoute
@@ -206,13 +233,16 @@ export interface FileRouteTypes {
     | '/acompanhamento'
     | '/agenda'
     | '/alunos'
+    | '/anamnese'
     | '/auth'
     | '/avaliacoes'
     | '/clientes'
     | '/dieta'
     | '/feed'
+    | '/financeiro'
     | '/forgot-password'
     | '/integracoes'
+    | '/landing'
     | '/notificacoes'
     | '/perfil'
     | '/privacidade-saude'
@@ -228,13 +258,16 @@ export interface FileRouteTypes {
     | '/acompanhamento'
     | '/agenda'
     | '/alunos'
+    | '/anamnese'
     | '/auth'
     | '/avaliacoes'
     | '/clientes'
     | '/dieta'
     | '/feed'
+    | '/financeiro'
     | '/forgot-password'
     | '/integracoes'
+    | '/landing'
     | '/notificacoes'
     | '/perfil'
     | '/privacidade-saude'
@@ -250,13 +283,16 @@ export interface FileRouteTypes {
     | '/acompanhamento'
     | '/agenda'
     | '/alunos'
+    | '/anamnese'
     | '/auth'
     | '/avaliacoes'
     | '/clientes'
     | '/dieta'
     | '/feed'
+    | '/financeiro'
     | '/forgot-password'
     | '/integracoes'
+    | '/landing'
     | '/notificacoes'
     | '/perfil'
     | '/privacidade-saude'
@@ -273,13 +309,16 @@ export interface RootRouteChildren {
   AcompanhamentoRoute: typeof AcompanhamentoRoute
   AgendaRoute: typeof AgendaRoute
   AlunosRoute: typeof AlunosRouteWithChildren
+  AnamneseRoute: typeof AnamneseRoute
   AuthRoute: typeof AuthRoute
   AvaliacoesRoute: typeof AvaliacoesRoute
   ClientesRoute: typeof ClientesRoute
   DietaRoute: typeof DietaRoute
   FeedRoute: typeof FeedRoute
+  FinanceiroRoute: typeof FinanceiroRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   IntegracoesRoute: typeof IntegracoesRouteWithChildren
+  LandingRoute: typeof LandingRoute
   NotificacoesRoute: typeof NotificacoesRoute
   PerfilRoute: typeof PerfilRoute
   PrivacidadeSaudeRoute: typeof PrivacidadeSaudeRoute
@@ -326,6 +365,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NotificacoesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/landing': {
+      id: '/landing'
+      path: '/landing'
+      fullPath: '/landing'
+      preLoaderRoute: typeof LandingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/integracoes': {
       id: '/integracoes'
       path: '/integracoes'
@@ -338,6 +384,13 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/financeiro': {
+      id: '/financeiro'
+      path: '/financeiro'
+      fullPath: '/financeiro'
+      preLoaderRoute: typeof FinanceiroRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/feed': {
@@ -373,6 +426,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/anamnese': {
+      id: '/anamnese'
+      path: '/anamnese'
+      fullPath: '/anamnese'
+      preLoaderRoute: typeof AnamneseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/alunos': {
@@ -462,13 +522,16 @@ const rootRouteChildren: RootRouteChildren = {
   AcompanhamentoRoute: AcompanhamentoRoute,
   AgendaRoute: AgendaRoute,
   AlunosRoute: AlunosRouteWithChildren,
+  AnamneseRoute: AnamneseRoute,
   AuthRoute: AuthRoute,
   AvaliacoesRoute: AvaliacoesRoute,
   ClientesRoute: ClientesRoute,
   DietaRoute: DietaRoute,
   FeedRoute: FeedRoute,
+  FinanceiroRoute: FinanceiroRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   IntegracoesRoute: IntegracoesRouteWithChildren,
+  LandingRoute: LandingRoute,
   NotificacoesRoute: NotificacoesRoute,
   PerfilRoute: PerfilRoute,
   PrivacidadeSaudeRoute: PrivacidadeSaudeRoute,

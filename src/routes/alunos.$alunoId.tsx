@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Apple, Calculator, CalendarCheck, Dumbbell, HeartPulse, Loader2, Plus } from "lucide-react";
+import { ArrowLeft, Apple, Calculator, CalendarCheck, CreditCard, Dumbbell, HeartPulse, Loader2, Plus } from "lucide-react";
 import { StudentTrackingPanel } from "@/components/professional/StudentTrackingPanel";
+import { BillingPanel } from "@/components/professional/BillingPanel";
 import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
 import { StudentAnamnesisPanel } from "@/components/professional/StudentAnamnesisPanel";
@@ -22,7 +23,7 @@ export const Route = createFileRoute("/alunos/$alunoId")({
   ),
 });
 
-type Tab = "anamnese" | "treinos" | "dieta" | "agenda" | "acompanhamento";
+type Tab = "anamnese" | "treinos" | "dieta" | "agenda" | "acompanhamento" | "financeiro";
 
 function StudentDetailPage() {
   const { alunoId } = Route.useParams();
@@ -69,21 +70,24 @@ function StudentDetailPage() {
     { id: "dieta", label: "Dieta", icon: Apple },
     { id: "agenda", label: "Agenda", icon: CalendarCheck },
     { id: "acompanhamento", label: "Acomp.", icon: HeartPulse },
+    { id: "financeiro", label: "Cobrança", icon: CreditCard },
   ];
 
   return (
     <AppShell>
-      <header className="px-5 pt-10 pb-4 border-b border-border">
+      <header className="px-5 md:px-8 pt-10 pb-0 border-b border-border">
         <Link
-          to="/"
-          className="inline-flex items-center gap-1 text-xs text-muted-foreground mb-3"
+          to="/clientes"
+          className="inline-flex items-center gap-1 text-xs text-muted-foreground mb-3 hover:text-foreground"
         >
-          <ArrowLeft className="size-4" /> Início
+          <ArrowLeft className="size-4" /> Clientes
         </Link>
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start justify-between gap-3 pb-4">
           <div>
             <h1 className="text-xl font-bold">{student.full_name ?? "Aluno"}</h1>
-            <p className="text-xs text-muted-foreground mt-1">Anamnese · Treino · Dieta · Agenda</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Ficha completa · visão 360º do aluno
+            </p>
           </div>
           <button
             type="button"
@@ -97,33 +101,37 @@ function StudentDetailPage() {
             Agendar
           </button>
         </div>
+
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-3 -mx-1 px-1 md:flex-wrap md:overflow-visible">
+          {tabs.map((t) => {
+            const Icon = t.icon;
+            const active = tab === t.id;
+            const label =
+              t.label === "Acomp."
+                ? "Acompanhamento"
+                : t.label === "Cobrança"
+                  ? "Cobrança"
+                  : t.label;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTab(t.id)}
+                className={`shrink-0 inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-colors ${
+                  active
+                    ? "bg-gradient-primary text-primary-foreground shadow-glow"
+                    : "bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
+                }`}
+              >
+                <Icon className="size-4 shrink-0" />
+                {label}
+              </button>
+            );
+          })}
+        </div>
       </header>
 
-      <div className="md:flex md:items-start md:gap-8 md:px-8 md:pt-4">
-        <div className="px-5 pt-4 md:px-0 md:pt-0 md:w-56 md:shrink-0">
-          <div className="grid grid-cols-5 gap-1 rounded-2xl bg-card border border-border p-1 overflow-x-auto md:grid-cols-1 md:overflow-visible md:border-0 md:bg-transparent md:p-0 md:gap-1.5">
-            {tabs.map((t) => {
-              const Icon = t.icon;
-              const active = tab === t.id;
-              const label = t.label === "Acomp." ? "Acompanhamento" : t.label;
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => setTab(t.id)}
-                  className={`rounded-xl py-2 md:py-2.5 md:px-3 text-[11px] md:text-sm font-bold flex flex-col md:flex-row items-center gap-1 md:gap-2 md:justify-start md:w-full ${
-                    active ? "bg-gradient-primary text-primary-foreground shadow-glow" : "text-muted-foreground md:hover:bg-accent"
-                  }`}
-                >
-                  <Icon className="size-4 shrink-0" />
-                  <span>{label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <section className="flex-1 min-w-0 px-5 py-5 pb-10 md:px-0 md:py-0 md:pb-10">
+      <section className="px-5 md:px-8 py-5 pb-10 max-w-5xl">
         {tab === "anamnese" && (
           <StudentAnamnesisPanel
             alunoId={alunoId}
@@ -147,8 +155,10 @@ function StudentDetailPage() {
             studentName={student.full_name ?? undefined}
           />
         )}
-        </section>
-      </div>
+        {tab === "financeiro" && (
+          <BillingPanel personalId={personalId} alunoId={alunoId} />
+        )}
+      </section>
 
       {openSchedule && (
         <QuickAppointmentModal
