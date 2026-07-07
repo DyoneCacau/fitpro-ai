@@ -13,6 +13,7 @@ import {
   HeartPulse,
   CalendarClock,
   Users,
+  Watch,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
@@ -213,6 +214,9 @@ function Perfil() {
                 <MenuLink to="/dieta" icon={Apple} label="Minha dieta" />
                 {isStudent && (
                   <MenuLink to="/acompanhamento" icon={HeartPulse} label="Acompanhamento e avaliações" />
+                )}
+                {isStudent && (
+                  <MenuLink to="/integracoes" icon={Watch} label="Relógio, Strava e saúde" />
                 )}
                 <MenuLink to="/notificacoes" icon={Bell} label="Notificações" />
               </div>

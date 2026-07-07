@@ -13,6 +13,7 @@ import { Route as TreinosRouteImport } from './routes/treinos'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as NotificacoesRouteImport } from './routes/notificacoes'
+import { Route as IntegracoesRouteImport } from './routes/integracoes'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FeedRouteImport } from './routes/feed'
 import { Route as DietaRouteImport } from './routes/dieta'
@@ -26,6 +27,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as TreinoIdRouteImport } from './routes/treino.$id'
 import { Route as ConviteTokenRouteImport } from './routes/convite.$token'
 import { Route as AlunosAlunoIdRouteImport } from './routes/alunos.$alunoId'
+import { Route as IntegracoesStravaCallbackRouteImport } from './routes/integracoes.strava.callback'
 
 const TreinosRoute = TreinosRouteImport.update({
   id: '/treinos',
@@ -45,6 +47,11 @@ const PerfilRoute = PerfilRouteImport.update({
 const NotificacoesRoute = NotificacoesRouteImport.update({
   id: '/notificacoes',
   path: '/notificacoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IntegracoesRoute = IntegracoesRouteImport.update({
+  id: '/integracoes',
+  path: '/integracoes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -112,6 +119,12 @@ const AlunosAlunoIdRoute = AlunosAlunoIdRouteImport.update({
   path: '/$alunoId',
   getParentRoute: () => AlunosRoute,
 } as any)
+const IntegracoesStravaCallbackRoute =
+  IntegracoesStravaCallbackRouteImport.update({
+    id: '/strava/callback',
+    path: '/strava/callback',
+    getParentRoute: () => IntegracoesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -124,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/dieta': typeof DietaRoute
   '/feed': typeof FeedRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/integracoes': typeof IntegracoesRouteWithChildren
   '/notificacoes': typeof NotificacoesRoute
   '/perfil': typeof PerfilRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -131,6 +145,7 @@ export interface FileRoutesByFullPath {
   '/alunos/$alunoId': typeof AlunosAlunoIdRoute
   '/convite/$token': typeof ConviteTokenRoute
   '/treino/$id': typeof TreinoIdRoute
+  '/integracoes/strava/callback': typeof IntegracoesStravaCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -143,6 +158,7 @@ export interface FileRoutesByTo {
   '/dieta': typeof DietaRoute
   '/feed': typeof FeedRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/integracoes': typeof IntegracoesRouteWithChildren
   '/notificacoes': typeof NotificacoesRoute
   '/perfil': typeof PerfilRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -150,6 +166,7 @@ export interface FileRoutesByTo {
   '/alunos/$alunoId': typeof AlunosAlunoIdRoute
   '/convite/$token': typeof ConviteTokenRoute
   '/treino/$id': typeof TreinoIdRoute
+  '/integracoes/strava/callback': typeof IntegracoesStravaCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -163,6 +180,7 @@ export interface FileRoutesById {
   '/dieta': typeof DietaRoute
   '/feed': typeof FeedRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/integracoes': typeof IntegracoesRouteWithChildren
   '/notificacoes': typeof NotificacoesRoute
   '/perfil': typeof PerfilRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -170,6 +188,7 @@ export interface FileRoutesById {
   '/alunos/$alunoId': typeof AlunosAlunoIdRoute
   '/convite/$token': typeof ConviteTokenRoute
   '/treino/$id': typeof TreinoIdRoute
+  '/integracoes/strava/callback': typeof IntegracoesStravaCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -184,6 +203,7 @@ export interface FileRouteTypes {
     | '/dieta'
     | '/feed'
     | '/forgot-password'
+    | '/integracoes'
     | '/notificacoes'
     | '/perfil'
     | '/reset-password'
@@ -191,6 +211,7 @@ export interface FileRouteTypes {
     | '/alunos/$alunoId'
     | '/convite/$token'
     | '/treino/$id'
+    | '/integracoes/strava/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -203,6 +224,7 @@ export interface FileRouteTypes {
     | '/dieta'
     | '/feed'
     | '/forgot-password'
+    | '/integracoes'
     | '/notificacoes'
     | '/perfil'
     | '/reset-password'
@@ -210,6 +232,7 @@ export interface FileRouteTypes {
     | '/alunos/$alunoId'
     | '/convite/$token'
     | '/treino/$id'
+    | '/integracoes/strava/callback'
   id:
     | '__root__'
     | '/'
@@ -222,6 +245,7 @@ export interface FileRouteTypes {
     | '/dieta'
     | '/feed'
     | '/forgot-password'
+    | '/integracoes'
     | '/notificacoes'
     | '/perfil'
     | '/reset-password'
@@ -229,6 +253,7 @@ export interface FileRouteTypes {
     | '/alunos/$alunoId'
     | '/convite/$token'
     | '/treino/$id'
+    | '/integracoes/strava/callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -242,6 +267,7 @@ export interface RootRouteChildren {
   DietaRoute: typeof DietaRoute
   FeedRoute: typeof FeedRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
+  IntegracoesRoute: typeof IntegracoesRouteWithChildren
   NotificacoesRoute: typeof NotificacoesRoute
   PerfilRoute: typeof PerfilRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -278,6 +304,13 @@ declare module '@tanstack/react-router' {
       path: '/notificacoes'
       fullPath: '/notificacoes'
       preLoaderRoute: typeof NotificacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/integracoes': {
+      id: '/integracoes'
+      path: '/integracoes'
+      fullPath: '/integracoes'
+      preLoaderRoute: typeof IntegracoesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -371,6 +404,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AlunosAlunoIdRouteImport
       parentRoute: typeof AlunosRoute
     }
+    '/integracoes/strava/callback': {
+      id: '/integracoes/strava/callback'
+      path: '/strava/callback'
+      fullPath: '/integracoes/strava/callback'
+      preLoaderRoute: typeof IntegracoesStravaCallbackRouteImport
+      parentRoute: typeof IntegracoesRoute
+    }
   }
 }
 
@@ -385,6 +425,18 @@ const AlunosRouteChildren: AlunosRouteChildren = {
 const AlunosRouteWithChildren =
   AlunosRoute._addFileChildren(AlunosRouteChildren)
 
+interface IntegracoesRouteChildren {
+  IntegracoesStravaCallbackRoute: typeof IntegracoesStravaCallbackRoute
+}
+
+const IntegracoesRouteChildren: IntegracoesRouteChildren = {
+  IntegracoesStravaCallbackRoute: IntegracoesStravaCallbackRoute,
+}
+
+const IntegracoesRouteWithChildren = IntegracoesRoute._addFileChildren(
+  IntegracoesRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AcompanhamentoRoute: AcompanhamentoRoute,
@@ -396,6 +448,7 @@ const rootRouteChildren: RootRouteChildren = {
   DietaRoute: DietaRoute,
   FeedRoute: FeedRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
+  IntegracoesRoute: IntegracoesRouteWithChildren,
   NotificacoesRoute: NotificacoesRoute,
   PerfilRoute: PerfilRoute,
   ResetPasswordRoute: ResetPasswordRoute,

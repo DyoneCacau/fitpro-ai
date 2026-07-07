@@ -173,6 +173,171 @@ export type Database = {
           },
         ]
       }
+      device_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          platform: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          platform: string
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          platform?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      health_metrics_daily: {
+        Row: {
+          active_calories: number | null
+          created_at: string
+          distance_m: number | null
+          heart_rate_avg: number | null
+          id: string
+          metric_date: string
+          provider: string
+          resting_calories: number | null
+          sleep_minutes: number | null
+          source_label: string | null
+          steps: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active_calories?: number | null
+          created_at?: string
+          distance_m?: number | null
+          heart_rate_avg?: number | null
+          id?: string
+          metric_date: string
+          provider: string
+          resting_calories?: number | null
+          sleep_minutes?: number | null
+          source_label?: string | null
+          steps?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active_calories?: number | null
+          created_at?: string
+          distance_m?: number | null
+          heart_rate_avg?: number | null
+          id?: string
+          metric_date?: string
+          provider?: string
+          resting_calories?: number | null
+          sleep_minutes?: number | null
+          source_label?: string | null
+          steps?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wearable_activities: {
+        Row: {
+          activity_type: string | null
+          calories: number | null
+          created_at: string
+          distance_m: number | null
+          duration_sec: number | null
+          external_id: string
+          id: string
+          name: string
+          provider: string
+          raw_data: Json | null
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          activity_type?: string | null
+          calories?: number | null
+          created_at?: string
+          distance_m?: number | null
+          duration_sec?: number | null
+          external_id: string
+          id?: string
+          name: string
+          provider: string
+          raw_data?: Json | null
+          started_at: string
+          user_id: string
+        }
+        Update: {
+          activity_type?: string | null
+          calories?: number | null
+          created_at?: string
+          distance_m?: number | null
+          duration_sec?: number | null
+          external_id?: string
+          id?: string
+          name?: string
+          provider?: string
+          raw_data?: Json | null
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wearable_connections: {
+        Row: {
+          access_token: string | null
+          created_at: string
+          external_user_id: string | null
+          id: string
+          last_sync_at: string | null
+          metadata: Json
+          provider: string
+          refresh_token: string | null
+          scopes: string[] | null
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          created_at?: string
+          external_user_id?: string | null
+          id?: string
+          last_sync_at?: string | null
+          metadata?: Json
+          provider: string
+          refresh_token?: string | null
+          scopes?: string[] | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string | null
+          created_at?: string
+          external_user_id?: string | null
+          id?: string
+          last_sync_at?: string | null
+          metadata?: Json
+          provider?: string
+          refresh_token?: string | null
+          scopes?: string[] | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       diet_plans: {
         Row: {
           aluno_id: string

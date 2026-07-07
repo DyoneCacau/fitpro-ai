@@ -1,18 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { CalendarClock, Dumbbell, Apple, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { HealthDashboardCard } from "@/components/student/wearables/HealthDashboardCard";
 import { useDisplayName } from "@/hooks/use-display-name";
 import { greetingForNow } from "@/lib/workout-display";
-
-const WEEK = [
-  { key: "S", label: "S" },
-  { key: "T", label: "T" },
-  { key: "Q", label: "Q" },
-  { key: "Q2", label: "Q" },
-  { key: "S2", label: "S" },
-  { key: "S3", label: "S" },
-  { key: "D", label: "D" },
-] as const;
 
 const MENU = [
   { to: "/treinos", label: "Treinos", icon: Dumbbell },
@@ -23,7 +14,6 @@ const MENU = [
 
 export function MfitStudentHome() {
   const { name, firstName, initials, avatarUrl } = useDisplayName();
-  const todayIndex = (new Date().getDay() + 6) % 7;
 
   return (
     <div className="min-h-[calc(100vh-5rem)] bg-background">
@@ -53,29 +43,8 @@ export function MfitStudentHome() {
       </div>
 
       <div className="px-4 pb-6">
-        <div className="rounded-2xl border border-border bg-card p-4 shadow-card -mt-2">
-          <p className="text-center text-sm font-bold text-foreground mb-3">
-            Frequência de Treinos
-          </p>
-          <div className="flex justify-between gap-1">
-            {WEEK.map((day, i) => {
-              const isToday = i === todayIndex;
-              return (
-                <div key={day.key} className="flex flex-col items-center gap-1.5 flex-1">
-                  <span className="text-[11px] font-bold text-primary">{day.label}</span>
-                  <div
-                    className={`size-9 rounded-full border-2 flex items-center justify-center ${
-                      isToday
-                        ? "border-primary bg-primary/15 shadow-glow"
-                        : "border-border bg-background"
-                    }`}
-                  >
-                    {isToday && <span className="text-primary text-xs font-bold">!</span>}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+        <div className="-mt-2">
+          <HealthDashboardCard compact />
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-3">

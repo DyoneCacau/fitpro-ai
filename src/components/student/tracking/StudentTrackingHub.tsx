@@ -14,6 +14,7 @@ import {
   Scale,
   Stethoscope,
   TrendingUp,
+  Watch,
 } from "lucide-react";
 import { Line, LineChart, XAxis, YAxis, CartesianGrid } from "recharts";
 import { AssessmentDetailView } from "@/components/assessment/AssessmentDetailView";
@@ -22,6 +23,8 @@ import {
   pickComparativePair,
 } from "@/components/assessment/ComparativeReportView";
 import { ExportAssessmentReportButton } from "@/components/assessment/ExportAssessmentReportButton";
+import { HealthDashboardCard } from "@/components/student/wearables/HealthDashboardCard";
+import { WearableConnectPanel } from "@/components/student/wearables/WearableConnectPanel";
 import { EmptyState, FeatureHubCard, SubPageHeader } from "@/components/student/FeatureHub";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { useAuth } from "@/hooks/use-auth";
@@ -49,7 +52,8 @@ type TrackingView =
   | "graficos"
   | "exames"
   | "materiais"
-  | "prescricoes";
+  | "prescricoes"
+  | "wearables";
 
 export function StudentTrackingHub({ embedded = false }: { embedded?: boolean }) {
   const [view, setView] = useState<TrackingView>("hub");
@@ -95,6 +99,12 @@ export function StudentTrackingHub({ embedded = false }: { embedded?: boolean })
             title="Prescrições"
             description="Consulte as prescrições disponibilizadas pelo seu profissional."
             onClick={() => setView("prescricoes")}
+          />
+          <FeatureHubCard
+            icon={Watch}
+            title="Relógio e Strava"
+            description="Passos, calorias e atividades do relógio ou Strava."
+            onClick={() => setView("wearables")}
           />
         </div>
       </>
@@ -161,6 +171,16 @@ function TrackingSubView({ view, onBack }: { view: TrackingView; onBack: () => v
     case "prescricoes":
       return (
         <PrescriptionsView plan={plan ?? null} workoutCount={workoutCount} onBack={onBack} />
+      );
+    case "wearables":
+      return (
+        <>
+          <SubPageHeader title="Relógio e Strava" onBack={onBack} />
+          <div className="px-5 pb-8 space-y-5">
+            <HealthDashboardCard />
+            <WearableConnectPanel />
+          </div>
+        </>
       );
     default:
       return null;
