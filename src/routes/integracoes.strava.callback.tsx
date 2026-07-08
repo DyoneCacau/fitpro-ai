@@ -10,7 +10,7 @@ export const Route = createFileRoute("/integracoes/strava/callback")({
     error: typeof search.error === "string" ? search.error : undefined,
     state: typeof search.state === "string" ? search.state : undefined,
   }),
-  head: () => ({ meta: [{ title: "Strava — FitPro AI" }] }),
+  head: () => ({ meta: [{ title: "Conectando atividades — FitPro AI" }] }),
   component: StravaCallbackPage,
 });
 
@@ -22,7 +22,7 @@ function StravaCallbackPage() {
   useEffect(() => {
     if (error) {
       setStatus("fail");
-      toast.error("Autorização Strava cancelada.");
+      toast.error("Autorização cancelada.");
       return;
     }
     if (!code) {
@@ -34,13 +34,13 @@ function StravaCallbackPage() {
       try {
         await exchangeStravaCode({ data: { code } });
         setStatus("ok");
-        toast.success("Strava conectado com sucesso!");
+        toast.success("Atividades conectadas com sucesso!");
         setTimeout(() => {
           void navigate({ to: "/integracoes" });
         }, 1200);
       } catch (e) {
         setStatus("fail");
-        toast.error(e instanceof Error ? e.message : "Erro ao conectar Strava");
+        toast.error(e instanceof Error ? e.message : "Erro ao conectar atividades");
       }
     })();
   }, [code, error, navigate]);
@@ -50,11 +50,11 @@ function StravaCallbackPage() {
       {status === "loading" && (
         <>
           <Loader2 className="size-10 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Conectando Strava…</p>
+          <p className="text-sm text-muted-foreground">Conectando atividades…</p>
         </>
       )}
       {status === "ok" && (
-        <p className="text-sm font-semibold text-foreground">Strava conectado! Redirecionando…</p>
+        <p className="text-sm font-semibold text-foreground">Conectado! Redirecionando…</p>
       )}
       {status === "fail" && (
         <button

@@ -128,13 +128,13 @@ export function HealthDashboardCard({
           to="/integracoes"
           className="block text-center text-xs font-semibold text-primary hover:underline"
         >
-          Conectar relógio ou Strava →
+          Conectar relógio →
         </Link>
       )}
 
       {readOnly && !hasWearable && (
         <p className="text-center text-xs text-muted-foreground">
-          O aluno ainda não conectou relógio ou Strava.
+          O aluno ainda não conectou nenhum relógio.
         </p>
       )}
     </div>

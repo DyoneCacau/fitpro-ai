@@ -1,5 +1,20 @@
 type SetLike = { target_reps: string; target_load?: number | null };
 
+export type SetType = "normal" | "drop" | "falha" | "rest_pause";
+
+export const SET_TYPE_OPTIONS: Array<{ value: SetType; label: string; short: string }> = [
+  { value: "normal", label: "Normal", short: "Normal" },
+  { value: "falha", label: "Até a falha", short: "Falha" },
+  { value: "drop", label: "Drop-set", short: "Drop" },
+  { value: "rest_pause", label: "Rest-pause", short: "Rest-pause" },
+];
+
+export function setTypeLabel(value: string | null | undefined, short = false): string {
+  const opt = SET_TYPE_OPTIONS.find((o) => o.value === value);
+  if (!opt) return "";
+  return short ? opt.short : opt.label;
+}
+
 export function formatSeriesLabel(sets: SetLike[]): string {
   if (sets.length === 0) return "—";
 

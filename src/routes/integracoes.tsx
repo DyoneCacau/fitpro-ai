@@ -18,8 +18,8 @@ function IntegracoesPage() {
   return (
     <AppShell>
       <PageHeader
-        title="Integrações"
-        subtitle="Relógios, Strava e saúde"
+        title="Relógio e saúde"
+        subtitle="Conecte seu relógio e apps de atividade"
       />
       <section className="px-5 pb-8 space-y-5">
         <HealthDashboardCard />

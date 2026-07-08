@@ -20,11 +20,11 @@ function PrivacidadeSaudePage() {
         <ul className="list-disc pl-5 space-y-1">
           <li>Painel de atividade e integração com treino/dieta</li>
           <li>Acompanhamento pelo profissional vinculado</li>
-          <li>Sincronização opcional com Strava</li>
+          <li>Sincronização opcional com relógios e apps de atividade</li>
         </ul>
         <h2 className="text-foreground text-base font-bold mt-6">Seus direitos</h2>
         <p>
-          Desconecte integrações em Perfil → Relógio, Strava e saúde. Notificações push seguem as
+          Desconecte integrações em Perfil → Relógio e saúde. Notificações push seguem as
           permissões do sistema operacional e aparecem no relógio quando pareado.
         </p>
       </article>

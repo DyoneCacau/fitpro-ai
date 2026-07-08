@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Heart, MessageCircle, Send, ImagePlus, X, Plus } from "lucide-react";
+import { Heart, MessageCircle, Send, ImagePlus, Camera, X, Plus } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
 import { PageHeader } from "@/components/PageHeader";
@@ -360,17 +360,32 @@ function ComposeModal({
             </button>
           </div>
         )}
-        <div className="mt-3 flex items-center justify-between">
-          <label className="flex items-center gap-2 cursor-pointer rounded-full bg-secondary px-4 py-2 text-sm font-medium">
-            <ImagePlus className="h-4 w-4" />
-            Foto
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => e.target.files?.[0] && onPick(e.target.files[0])}
-            />
-          </label>
+        {!preview && (
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <label className="flex items-center justify-center gap-2 cursor-pointer rounded-2xl border border-input bg-secondary px-4 py-3 text-sm font-semibold active:scale-[0.98] transition-transform">
+              <ImagePlus className="h-4 w-4" />
+              Galeria
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => e.target.files?.[0] && onPick(e.target.files[0])}
+              />
+            </label>
+            <label className="flex items-center justify-center gap-2 cursor-pointer rounded-2xl border border-input bg-secondary px-4 py-3 text-sm font-semibold active:scale-[0.98] transition-transform">
+              <Camera className="h-4 w-4" />
+              Câmera
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => e.target.files?.[0] && onPick(e.target.files[0])}
+              />
+            </label>
+          </div>
+        )}
+        <div className="mt-3 flex items-center justify-end">
           <button
             onClick={submit}
             disabled={saving || (!text.trim() && !file)}

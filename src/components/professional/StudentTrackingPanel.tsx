@@ -57,7 +57,7 @@ export function StudentTrackingPanel({ alunoId, personalId, studentName }: Props
       <section>
         <h3 className="text-sm font-bold text-foreground mb-3">Atividade e wearables</h3>
         <p className="text-xs text-muted-foreground mb-3">
-          Passos, calorias e treinos sincronizados pelo aluno (Strava / relógio).
+          Passos, calorias e treinos sincronizados pelo aluno (relógio e apps de atividade).
         </p>
         <HealthDashboardCard userId={alunoId} readOnly title={`Atividade · ${studentName ?? "Aluno"}`} />
       </section>

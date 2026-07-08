@@ -36,6 +36,7 @@ import {
   parsePrescriptionLine,
   parseWorkoutText,
 } from "@/lib/workout-text-parser";
+import { SET_TYPE_OPTIONS } from "@/lib/workout-display";
 
 type WorkoutRow = {
   id: string;
@@ -621,9 +622,10 @@ function ExerciseCard({
         </div>
 
         <div className="rounded-xl border border-border bg-background/30 p-2 space-y-1.5">
-          <div className="grid grid-cols-[28px_1fr_56px_56px] gap-1 text-[9px] font-bold uppercase text-muted-foreground px-0.5">
-            <span>Série</span>
-            <span>Repetições / método</span>
+          <div className="grid grid-cols-[20px_1fr_1fr_44px_auto] gap-1 text-[9px] font-bold uppercase text-muted-foreground px-0.5">
+            <span>#</span>
+            <span>Reps</span>
+            <span>Método</span>
             <span className="text-center">Carga</span>
             <span />
           </div>
@@ -676,7 +678,7 @@ function AddSetButton({
         position: sets.length + 1,
         target_reps: last?.target_reps ?? "",
         target_load: last?.target_load ?? 0,
-        set_type: "normal",
+        set_type: last?.set_type ?? "normal",
       });
       if (error) throw error;
     },
@@ -882,19 +884,30 @@ function SetRowEditor({ set, onChanged }: { set: SetRow; onChanged: () => void }
 
   return (
     <div className="space-y-1">
-      <div className="grid grid-cols-[28px_1fr_56px_56px] gap-1 items-center">
+      <div className="grid grid-cols-[20px_1fr_1fr_44px_auto] gap-1 items-center">
         <span className="text-xs font-bold pl-0.5">{set.position}</span>
         <input
           defaultValue={set.target_reps}
           onBlur={(e) => save.mutate({ target_reps: e.target.value.trim() || "—" })}
-          placeholder="12 · falha · drop · 10-8"
-          className="field-input py-1.5 text-xs"
+          placeholder="12"
+          className="field-input py-1.5 text-xs text-center"
         />
+        <select
+          value={SET_TYPE_OPTIONS.some((o) => o.value === set.set_type) ? set.set_type : "normal"}
+          onChange={(e) => save.mutate({ set_type: e.target.value })}
+          className="field-input py-1.5 text-xs"
+        >
+          {SET_TYPE_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
         <input
           type="number"
           defaultValue={set.target_load ?? 0}
           onBlur={(e) => save.mutate({ target_load: Number(e.target.value) })}
-          className="field-input py-1.5 text-xs text-center"
+          className="field-input py-1.5 text-xs text-center px-1"
         />
         <div className="flex items-center justify-end gap-0.5">
           <button

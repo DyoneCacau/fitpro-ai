@@ -207,6 +207,22 @@ export async function fetchStudentFollowUpHistory(
   return fetchStudentAppointmentHistory(personalId, alunoId);
 }
 
+export async function fetchMyScheduledAppointments(
+  alunoId: string,
+): Promise<StudentAppointment[]> {
+  const { data, error } = await supabase
+    .from("student_appointments")
+    .select(
+      "id, personal_id, aluno_id, scheduled_at, duration_minutes, kind, status, notes, recurrence_days",
+    )
+    .eq("aluno_id", alunoId)
+    .eq("status", "scheduled")
+    .gte("scheduled_at", startOfDay(new Date()).toISOString())
+    .order("scheduled_at");
+  if (error) throw error;
+  return (data ?? []) as StudentAppointment[];
+}
+
 export async function fetchMyAppointmentHistory(alunoId: string): Promise<StudentAppointment[]> {
   const { data, error } = await supabase
     .from("student_appointments")

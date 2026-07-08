@@ -107,8 +107,8 @@ export function StudentTrackingHub({ embedded = false }: { embedded?: boolean })
           />
           <FeatureHubCard
             icon={Watch}
-            title="Relógio e Strava"
-            description="Passos, calorias e atividades do relógio ou Strava."
+            title="Relógio e saúde"
+            description="Passos, calorias e atividades do seu relógio."
             onClick={() => setView("wearables")}
           />
         </div>
@@ -180,7 +180,7 @@ function TrackingSubView({ view, onBack }: { view: TrackingView; onBack: () => v
     case "wearables":
       return (
         <>
-          <SubPageHeader title="Relógio e Strava" onBack={onBack} />
+          <SubPageHeader title="Relógio e saúde" onBack={onBack} />
           <div className="px-5 pb-8 space-y-5">
             <HealthDashboardCard />
             <WearableConnectPanel />

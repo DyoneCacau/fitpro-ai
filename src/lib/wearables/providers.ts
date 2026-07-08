@@ -18,8 +18,8 @@ export type ProviderMeta = {
 export const WEARABLE_PROVIDERS: ProviderMeta[] = [
   {
     id: "strava",
-    label: "Strava",
-    description: "Importe corridas, ciclismo e calorias das suas atividades.",
+    label: "Corridas e ciclismo",
+    description: "Importe corridas, ciclismo e calorias das suas atividades por GPS.",
     icon: Activity,
     connectMode: "oauth",
     platforms: ["web", "android", "ios"],

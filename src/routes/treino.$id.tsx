@@ -1,16 +1,22 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Check, ChevronLeft, ClipboardList, Dumbbell, Loader2, Timer, Video } from "lucide-react";
+import {
+  Check,
+  ChevronLeft,
+  ClipboardList,
+  Dumbbell,
+  Loader2,
+  SkipForward,
+  Timer,
+  Video,
+  X,
+} from "lucide-react";
 import { AuthGate } from "@/components/AuthGate";
 import { ExerciseVideoPlayer } from "@/components/student/ExerciseVideoPlayer";
 import { PremiumCollapsible } from "@/components/student/ui/PremiumCollapsible";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  formatLoadLabel,
-  formatRestLabel,
-  formatSeriesLabel,
-} from "@/lib/workout-display";
+import { formatRestLabel, setTypeLabel } from "@/lib/workout-display";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/treino/$id")({
@@ -61,24 +67,63 @@ function WorkoutPage() {
   const [active, setActive] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [completedSetIds, setCompletedSetIds] = useState<Set<string>>(() => new Set());
+  const [completedExerciseIds, setCompletedExerciseIds] = useState<Set<string>>(() => new Set());
+  const [rest, setRest] = useState<{ remaining: number; total: number } | null>(null);
 
   useEffect(() => {
     if (!active) {
       setElapsed(0);
       setCompletedSetIds(new Set());
+      setCompletedExerciseIds(new Set());
+      setRest(null);
       return;
     }
     const t = setInterval(() => setElapsed((e) => e + 1), 1000);
     return () => clearInterval(t);
   }, [active]);
 
-  function toggleSetComplete(setId: string) {
+  useEffect(() => {
+    if (!rest) return;
+    if (rest.remaining <= 0) {
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+        navigator.vibrate?.([200, 100, 200]);
+      }
+      const done = setTimeout(() => setRest(null), 2000);
+      return () => clearTimeout(done);
+    }
+    const t = setTimeout(
+      () => setRest((r) => (r ? { ...r, remaining: r.remaining - 1 } : r)),
+      1000,
+    );
+    return () => clearTimeout(t);
+  }, [rest]);
+
+  function startRest(seconds: number) {
+    const s = Math.max(0, Math.round(seconds));
+    if (s <= 0) return;
+    setRest({ remaining: s, total: s });
+  }
+
+  function toggleSetComplete(setId: string, restSeconds: number) {
+    const wasDone = completedSetIds.has(setId);
     setCompletedSetIds((prev) => {
       const next = new Set(prev);
       if (next.has(setId)) next.delete(setId);
       else next.add(setId);
       return next;
     });
+    if (!wasDone) startRest(restSeconds);
+  }
+
+  function toggleExerciseComplete(exerciseId: string, restSeconds: number) {
+    const wasDone = completedExerciseIds.has(exerciseId);
+    setCompletedExerciseIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(exerciseId)) next.delete(exerciseId);
+      else next.add(exerciseId);
+      return next;
+    });
+    if (!wasDone) startRest(restSeconds);
   }
 
   const { data: workout, isLoading, error } = useQuery({
@@ -174,12 +219,95 @@ function WorkoutPage() {
               exercise={exercise}
               muscles={workout.muscles}
               active={active}
+              done={completedExerciseIds.has(exercise.id)}
+              onToggleExercise={toggleExerciseComplete}
+              onStartRest={startRest}
               completedSetIds={completedSetIds}
               onToggleSet={toggleSetComplete}
             />
           ))}
         </div>
       </div>
+
+      {rest && (
+        <div className="fixed inset-x-0 bottom-[68px] z-40 px-3 pb-2">
+          <div
+            className={cn(
+              "mx-auto max-w-md rounded-2xl border p-3 shadow-lg backdrop-blur",
+              rest.remaining <= 0
+                ? "border-emerald-500/50 bg-emerald-500/15"
+                : "border-primary/40 bg-card/95",
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className={cn(
+                  "flex size-11 shrink-0 items-center justify-center rounded-full",
+                  rest.remaining <= 0 ? "bg-emerald-500 text-white" : "bg-primary/15 text-primary",
+                )}
+              >
+                {rest.remaining <= 0 ? (
+                  <Check className="size-6" strokeWidth={3} />
+                ) : (
+                  <Timer className="size-6" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                  {rest.remaining <= 0 ? "Descanso concluído" : "Descanso"}
+                </p>
+                <p className="text-2xl font-black tabular-nums leading-tight">
+                  {formatElapsed(Math.max(0, rest.remaining))}
+                </p>
+              </div>
+              {rest.remaining > 0 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setRest((r) =>
+                        r ? { total: r.total + 15, remaining: r.remaining + 15 } : r,
+                      )
+                    }
+                    className="shrink-0 rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground active:scale-95"
+                  >
+                    +15s
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRest(null)}
+                    className="shrink-0 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground active:scale-95 flex items-center gap-1"
+                  >
+                    <SkipForward className="size-3.5" />
+                    Pular
+                  </button>
+                </>
+              )}
+              {rest.remaining <= 0 && (
+                <button
+                  type="button"
+                  onClick={() => setRest(null)}
+                  className="shrink-0 rounded-xl border border-border bg-background p-2 text-muted-foreground active:scale-95"
+                  aria-label="Fechar"
+                >
+                  <X className="size-4" />
+                </button>
+              )}
+            </div>
+            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className={cn(
+                  "h-full rounded-full transition-all duration-1000 ease-linear",
+                  rest.remaining <= 0 ? "bg-emerald-500" : "bg-primary",
+                )}
+                style={{
+                  width: `${rest.total > 0 ? (Math.max(0, rest.remaining) / rest.total) * 100 : 0}%`,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Barra fixa inferior — estilo referência */}
       <div className="fixed bottom-0 inset-x-0 z-30 border-t border-primary/30 bg-gradient-to-r from-primary/95 to-primary pb-[env(safe-area-inset-bottom)]">
@@ -220,90 +348,149 @@ function ExerciseRow({
   exercise,
   muscles,
   active,
+  done,
+  onToggleExercise,
+  onStartRest,
   completedSetIds,
   onToggleSet,
 }: {
   exercise: DbExercise;
   muscles: string | null;
   active: boolean;
+  done: boolean;
+  onToggleExercise: (exerciseId: string, restSeconds: number) => void;
+  onStartRest: (restSeconds: number) => void;
   completedSetIds: Set<string>;
-  onToggleSet: (setId: string) => void;
+  onToggleSet: (setId: string, restSeconds: number) => void;
 }) {
-  const [showDetail, setShowDetail] = useState(false);
+  const restSeconds = exercise.rest_seconds ?? 60;
+  const [showVideo, setShowVideo] = useState(false);
   const sets = exercise.exercise_sets ?? [];
   const muscleLabel = muscles?.split(/[,/]/)[0]?.trim() ?? "Geral";
+  const hasVideo = !!exercise.video_url?.trim();
 
   return (
-    <div className="px-4 py-4">
-      <button
-        type="button"
-        onClick={() => setShowDetail((v) => !v)}
-        className="w-full text-left"
-      >
-        <p className="text-[15px] font-bold text-foreground leading-snug">{exercise.name}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">{muscleLabel}</p>
-      </button>
+    <div className={cn("px-4 py-4 transition-colors", done && "bg-primary/[0.04]")}>
+      <div className="flex gap-3">
+        {active && (
+          <button
+            type="button"
+            onClick={() => onToggleExercise(exercise.id, restSeconds)}
+            aria-label={done ? "Desmarcar exercício" : "Marcar exercício como feito"}
+            className={cn(
+              "mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full border-2 transition-colors active:scale-90",
+              done
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-muted-foreground/40 text-transparent",
+            )}
+          >
+            <Check className="size-4" strokeWidth={3} />
+          </button>
+        )}
 
-      {showDetail && (
-        <div className="mt-3 space-y-2 rounded-xl bg-muted/30 p-3 text-xs text-muted-foreground">
-          {exercise.video_url?.trim() && (
-            <div className="space-y-1.5">
-              <p className="font-semibold text-foreground flex items-center gap-1">
-                <Video className="size-3.5 text-primary" /> Execução
-              </p>
-              <ExerciseVideoPlayer url={exercise.video_url.trim()} title={exercise.name} />
-            </div>
-          )}
-          <p>
-            <span className="font-semibold text-foreground">Séries: </span>
-            {formatSeriesLabel(sets)}
+        <div className="min-w-0 flex-1">
+          <p
+            className={cn(
+              "text-[15px] font-bold leading-snug",
+              done ? "text-muted-foreground line-through" : "text-foreground",
+            )}
+          >
+            {exercise.name}
           </p>
-          <p>
-            <span className="font-semibold text-foreground">Carga: </span>
-            {formatLoadLabel(sets)}
-          </p>
-          <p>
-            <span className="font-semibold text-foreground">Intervalo: </span>
-            {formatRestLabel(exercise.rest_seconds)}
-          </p>
-          {exercise.note?.trim() && (
-            <p className="text-foreground leading-relaxed">{exercise.note.trim()}</p>
-          )}
+          <p className="text-xs text-muted-foreground mt-0.5">{muscleLabel}</p>
 
-          {active && sets.length > 0 && (
-            <div className="space-y-1.5 pt-2 border-t border-border">
+          {/* Séries sempre visíveis */}
+          {sets.length > 0 && (
+            <div className="mt-3 space-y-1.5">
               {sets.map((set) => {
-                const done = completedSetIds.has(set.id);
+                const setDone = completedSetIds.has(set.id);
                 return (
                   <button
                     key={set.id}
                     type="button"
-                    onClick={() => onToggleSet(set.id)}
+                    onClick={() => active && onToggleSet(set.id, restSeconds)}
+                    disabled={!active}
                     className={cn(
-                      "flex w-full items-center gap-2 rounded-lg border px-2 py-2 transition-colors",
-                      done
+                      "flex w-full items-center gap-2 rounded-lg border px-2 py-2 transition-colors text-left",
+                      setDone
                         ? "border-primary/40 bg-primary/10"
                         : "border-border bg-background",
+                      !active && "cursor-default opacity-95",
                     )}
                   >
                     <span
                       className={cn(
                         "flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold",
-                        done ? "bg-primary text-primary-foreground" : "border border-border text-primary",
+                        setDone
+                          ? "bg-primary text-primary-foreground"
+                          : "border border-border text-primary",
                       )}
                     >
-                      {done ? <Check className="size-3.5" strokeWidth={3} /> : `${set.position}ª`}
+                      {setDone ? <Check className="size-3.5" strokeWidth={3} /> : `${set.position}ª`}
                     </span>
-                    <span className={cn("flex-1 text-left", done && "line-through opacity-70")}>
+                    <span className={cn("flex-1", setDone && "line-through opacity-70")}>
                       {set.target_reps} · {set.target_load ?? 0} kg
                     </span>
+                    {setTypeLabel(set.set_type, true) && set.set_type !== "normal" && (
+                      <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase text-primary">
+                        {setTypeLabel(set.set_type, true)}
+                      </span>
+                    )}
+                    {active && (
+                      <span
+                        className={cn(
+                          "shrink-0 text-[10px] font-bold uppercase",
+                          setDone ? "text-primary" : "text-muted-foreground/60",
+                        )}
+                      >
+                        {setDone ? "Feito" : "Marcar"}
+                      </span>
+                    )}
                   </button>
                 );
               })}
             </div>
           )}
+
+          {/* Rodapé: intervalo + vídeo */}
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+            <button
+              type="button"
+              onClick={() => active && onStartRest(restSeconds)}
+              disabled={!active}
+              className={cn(
+                "inline-flex items-center gap-1",
+                active ? "text-primary font-semibold" : "text-muted-foreground",
+              )}
+            >
+              <Timer className="size-3.5" />
+              Intervalo: {formatRestLabel(exercise.rest_seconds)}
+            </button>
+            {hasVideo && (
+              <button
+                type="button"
+                onClick={() => setShowVideo((v) => !v)}
+                className="inline-flex items-center gap-1 font-semibold text-primary"
+              >
+                <Video className="size-3.5" />
+                {showVideo ? "Ocultar vídeo" : "Ver vídeo"}
+              </button>
+            )}
+          </div>
+
+          {showVideo && hasVideo && (
+            <div className="mt-2">
+              <ExerciseVideoPlayer url={exercise.video_url!.trim()} title={exercise.name} />
+            </div>
+          )}
+
+          {exercise.note?.trim() && (
+            <p className="mt-2 rounded-lg bg-muted/30 p-2 text-xs leading-relaxed text-muted-foreground">
+              {exercise.note.trim()}
+            </p>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

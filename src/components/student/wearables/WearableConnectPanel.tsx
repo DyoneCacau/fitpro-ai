@@ -49,7 +49,7 @@ export function WearableConnectPanel() {
       const { authUrl } = await getStravaConnectInfo();
       window.location.href = authUrl;
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao conectar Strava");
+      toast.error(e instanceof Error ? e.message : "Erro ao conectar atividades");
       setBusy(null);
     }
   }
@@ -128,7 +128,7 @@ export function WearableConnectPanel() {
     try {
       if (provider === "strava") {
         const r = await syncStravaData({ data: { days: 14 } });
-        toast.success(`${r.activitiesImported} atividades importadas do Strava.`);
+        toast.success(`${r.activitiesImported} atividades importadas.`);
       } else if (user) {
         await syncNativeHealthMetrics(user.id, 7);
         toast.success("Métricas de saúde sincronizadas.");
@@ -148,13 +148,13 @@ export function WearableConnectPanel() {
         <p className="font-semibold text-foreground mb-1">Como funciona</p>
         <ul className="list-disc pl-4 space-y-1">
           <li>
-            <strong>Strava</strong> — importa atividades e calorias (web e app).
-          </li>
-          <li>
             <strong>Apple Watch</strong> — via Apple Saúde no iPhone (app nativo).
           </li>
           <li>
             <strong>Samsung / Garmin / Fitbit</strong> — via Health Connect no Android.
+          </li>
+          <li>
+            <strong>Corridas e ciclismo</strong> — importa suas atividades e calorias por GPS.
           </li>
           <li>
             Notificações do app aparecem no relógio quando pareado com o celular (push nativo).

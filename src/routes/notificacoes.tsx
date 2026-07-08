@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Bell, BellOff } from "lucide-react";
@@ -53,20 +53,33 @@ function Notifs() {
             <p className="text-sm font-semibold">Sem notificações</p>
           </div>
         )}
-        {items.map((n) => (
-          <div key={n.id} className="rounded-2xl bg-card border border-border p-4 flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
-              <Bell className="h-5 w-5" />
+        {items.map((n) => {
+          const inner = (
+            <>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                <Bell className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold">{n.title}</p>
+                {n.body && <p className="text-xs text-muted-foreground mt-0.5">{n.body}</p>}
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  {new Date(n.created_at).toLocaleString("pt-BR")}
+                </p>
+              </div>
+            </>
+          );
+          const className =
+            "rounded-2xl bg-card border border-border p-4 flex items-start gap-3";
+          return n.link ? (
+            <Link key={n.id} to={n.link} className={`${className} active:scale-[0.99] transition-transform`}>
+              {inner}
+            </Link>
+          ) : (
+            <div key={n.id} className={className}>
+              {inner}
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-bold">{n.title}</p>
-              {n.body && <p className="text-xs text-muted-foreground mt-0.5">{n.body}</p>}
-              <p className="text-[10px] text-muted-foreground mt-1">
-                {new Date(n.created_at).toLocaleString("pt-BR")}
-              </p>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </section>
     </AppShell>
   );

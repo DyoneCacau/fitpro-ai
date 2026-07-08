@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarClock, Loader2 } from "lucide-react";
+import { CalendarClock, Clock, Loader2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
 import { PageHeader } from "@/components/PageHeader";
@@ -10,7 +10,10 @@ import {
   addDays,
   daysUntil,
   fetchMyAppointmentHistory,
+  fetchMyScheduledAppointments,
   fetchStudentFollowUp,
+  formatAppointmentDate,
+  formatAppointmentTime,
   getRecurrenceLabel,
 } from "@/lib/appointments";
 import { useAuth } from "@/hooks/use-auth";
@@ -36,6 +39,12 @@ function StudentAgendaPage() {
       if (!personalId) return null;
       return fetchStudentFollowUp(personalId, user.id);
     },
+  });
+
+  const { data: upcoming = [], isLoading: loadingUpcoming } = useQuery({
+    queryKey: ["myScheduledAppointments", user?.id],
+    enabled: !!user?.id,
+    queryFn: () => fetchMyScheduledAppointments(user!.id),
   });
 
   const { data: history = [], isLoading: loadingHistory } = useQuery({
@@ -87,6 +96,45 @@ function StudentAgendaPage() {
             )}
           </div>
         ) : null}
+
+        <div>
+          <h3 className="text-sm font-bold mb-3">Próximos agendamentos</h3>
+          {loadingUpcoming ? (
+            <div className="flex justify-center py-4">
+              <Loader2 className="size-5 animate-spin text-primary" />
+            </div>
+          ) : upcoming.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border bg-card/40 p-5 text-center">
+              <CalendarClock className="mx-auto mb-2 size-8 text-muted-foreground" />
+              <p className="text-xs text-muted-foreground">
+                Nenhum agendamento marcado. Seu profissional avisa por aqui quando marcar uma
+                consulta ou retorno.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {upcoming.map((ap) => (
+                <div key={ap.id} className="rounded-2xl border border-border bg-card p-4">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase text-primary">
+                      {APPOINTMENT_KIND_LABELS[ap.kind]}
+                    </span>
+                    <span className="text-xs font-semibold text-foreground">
+                      {formatAppointmentDate(ap.scheduled_at)}
+                    </span>
+                  </div>
+                  <p className="mt-2 flex items-center gap-1.5 text-sm font-bold">
+                    <Clock className="size-4 text-primary" />
+                    {formatAppointmentTime(ap.scheduled_at)}
+                  </p>
+                  {ap.notes && (
+                    <p className="mt-1 text-xs text-muted-foreground">{ap.notes}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div>
           <h3 className="text-sm font-bold mb-3">Histórico</h3>

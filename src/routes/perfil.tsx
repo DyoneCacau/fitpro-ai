@@ -216,7 +216,7 @@ function Perfil() {
                   <MenuLink to="/acompanhamento" icon={HeartPulse} label="Acompanhamento e avaliações" />
                 )}
                 {isStudent && (
-                  <MenuLink to="/integracoes" icon={Watch} label="Relógio, Strava e saúde" />
+                  <MenuLink to="/integracoes" icon={Watch} label="Relógio e saúde" />
                 )}
                 <MenuLink to="/notificacoes" icon={Bell} label="Notificações" />
               </div>
