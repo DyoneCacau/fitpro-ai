@@ -1,6 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
 import {
   Check,
   ChevronLeft,
@@ -16,6 +16,7 @@ import { AuthGate } from "@/components/AuthGate";
 import { ExerciseVideoPlayer } from "@/components/student/ExerciseVideoPlayer";
 import { PremiumCollapsible } from "@/components/student/ui/PremiumCollapsible";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { formatRestLabel, setTypeLabel } from "@/lib/workout-display";
 import { cn } from "@/lib/utils";
 
@@ -64,6 +65,8 @@ function formatElapsed(seconds: number) {
 function WorkoutPage() {
   const { id } = Route.useParams();
   const router = useRouter();
+  const { user } = useAuth();
+  const qc = useQueryClient();
   const [active, setActive] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [completedSetIds, setCompletedSetIds] = useState<Set<string>>(() => new Set());
@@ -147,6 +150,45 @@ function WorkoutPage() {
     },
   });
 
+  const setIds = useMemo(() => {
+    const ids: string[] = [];
+    workout?.exercises?.forEach((e) =>
+      e.exercise_sets?.forEach((s) => ids.push(s.id)),
+    );
+    return ids;
+  }, [workout]);
+
+  const { data: savedLoads = {} } = useQuery({
+    queryKey: ["studentSetLoads", id, user?.id],
+    enabled: !!user?.id && setIds.length > 0,
+    queryFn: async () => {
+      const { data, error: qError } = await supabase
+        .from("student_set_loads")
+        .select("exercise_set_id, load")
+        .eq("aluno_id", user!.id)
+        .in("exercise_set_id", setIds);
+      if (qError) throw qError;
+      const map: Record<string, number> = {};
+      (data ?? []).forEach((r) => {
+        map[r.exercise_set_id] = Number(r.load);
+      });
+      return map;
+    },
+  });
+
+  const saveLoad = useMutation({
+    mutationFn: async ({ setId, load }: { setId: string; load: number }) => {
+      if (!user?.id) throw new Error("Sessão expirada");
+      const { error: upError } = await supabase.from("student_set_loads").upsert(
+        { aluno_id: user.id, exercise_set_id: setId, load },
+        { onConflict: "aluno_id,exercise_set_id" },
+      );
+      if (upError) throw upError;
+    },
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["studentSetLoads", id, user?.id] }),
+  });
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -224,6 +266,8 @@ function WorkoutPage() {
               onStartRest={startRest}
               completedSetIds={completedSetIds}
               onToggleSet={toggleSetComplete}
+              savedLoads={savedLoads}
+              onSaveLoad={(setId, load) => saveLoad.mutate({ setId, load })}
             />
           ))}
         </div>
@@ -353,6 +397,8 @@ function ExerciseRow({
   onStartRest,
   completedSetIds,
   onToggleSet,
+  savedLoads,
+  onSaveLoad,
 }: {
   exercise: DbExercise;
   muscles: string | null;
@@ -362,6 +408,8 @@ function ExerciseRow({
   onStartRest: (restSeconds: number) => void;
   completedSetIds: Set<string>;
   onToggleSet: (setId: string, restSeconds: number) => void;
+  savedLoads: Record<string, number>;
+  onSaveLoad: (setId: string, load: number) => void;
 }) {
   const restSeconds = exercise.rest_seconds ?? 60;
   const [showVideo, setShowVideo] = useState(false);
@@ -404,49 +452,56 @@ function ExerciseRow({
             <div className="mt-3 space-y-1.5">
               {sets.map((set) => {
                 const setDone = completedSetIds.has(set.id);
+                const typeBadge =
+                  set.set_type !== "normal" ? setTypeLabel(set.set_type, true) : null;
                 return (
-                  <button
+                  <div
                     key={set.id}
-                    type="button"
-                    onClick={() => active && onToggleSet(set.id, restSeconds)}
-                    disabled={!active}
                     className={cn(
-                      "flex w-full items-center gap-2 rounded-lg border px-2 py-2 transition-colors text-left",
+                      "flex items-center gap-2 rounded-lg border px-2 py-2 transition-colors",
                       setDone
                         ? "border-primary/40 bg-primary/10"
                         : "border-border bg-background",
-                      !active && "cursor-default opacity-95",
                     )}
                   >
-                    <span
+                    <button
+                      type="button"
+                      onClick={() => active && onToggleSet(set.id, restSeconds)}
+                      disabled={!active}
+                      aria-label={setDone ? "Desmarcar série" : "Marcar série como feita"}
                       className={cn(
-                        "flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold",
+                        "flex size-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold transition-colors active:scale-90",
                         setDone
                           ? "bg-primary text-primary-foreground"
                           : "border border-border text-primary",
+                        !active && "cursor-default opacity-70",
                       )}
                     >
-                      {setDone ? <Check className="size-3.5" strokeWidth={3} /> : `${set.position}ª`}
+                      {setDone ? <Check className="size-4" strokeWidth={3} /> : `${set.position}ª`}
+                    </button>
+
+                    <span
+                      className={cn(
+                        "shrink-0 text-sm font-semibold tabular-nums",
+                        setDone && "line-through opacity-60",
+                      )}
+                    >
+                      {set.target_reps} reps
                     </span>
-                    <span className={cn("flex-1", setDone && "line-through opacity-70")}>
-                      {set.target_reps} · {set.target_load ?? 0} kg
-                    </span>
-                    {setTypeLabel(set.set_type, true) && set.set_type !== "normal" && (
-                      <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase text-primary">
-                        {setTypeLabel(set.set_type, true)}
-                      </span>
-                    )}
-                    {active && (
-                      <span
-                        className={cn(
-                          "shrink-0 text-[10px] font-bold uppercase",
-                          setDone ? "text-primary" : "text-muted-foreground/60",
-                        )}
-                      >
-                        {setDone ? "Feito" : "Marcar"}
-                      </span>
-                    )}
-                  </button>
+
+                    <div className="ml-auto flex items-center gap-1.5">
+                      {typeBadge && (
+                        <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase text-primary">
+                          {typeBadge}
+                        </span>
+                      )}
+                      <SetLoadInput
+                        value={savedLoads[set.id] ?? set.target_load ?? 0}
+                        onSave={(load) => onSaveLoad(set.id, load)}
+                      />
+                      <span className="text-xs font-medium text-muted-foreground">kg</span>
+                    </div>
+                  </div>
                 );
               })}
             </div>
@@ -492,5 +547,46 @@ function ExerciseRow({
         </div>
       </div>
     </div>
+  );
+}
+
+function SetLoadInput({
+  value,
+  onSave,
+}: {
+  value: number;
+  onSave: (load: number) => void;
+}) {
+  const [text, setText] = useState(String(value));
+
+  useEffect(() => {
+    setText(String(value));
+  }, [value]);
+
+  const commit = () => {
+    const n = Number(text.replace(",", "."));
+    if (!Number.isNaN(n) && n >= 0 && n !== value) {
+      onSave(n);
+    } else {
+      setText(String(value));
+    }
+  };
+
+  return (
+    <input
+      type="number"
+      inputMode="decimal"
+      step="0.5"
+      min="0"
+      value={text}
+      onChange={(e) => setText(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") e.currentTarget.blur();
+      }}
+      onFocus={(e) => e.currentTarget.select()}
+      aria-label="Carga em kg"
+      className="w-14 rounded-md border border-border bg-background py-1 text-center text-sm font-bold tabular-nums outline-none focus:border-primary"
+    />
   );
 }
