@@ -323,7 +323,7 @@ function ComposeModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
         className="flex w-full max-w-md flex-col max-h-[90dvh] rounded-t-3xl bg-card border-t border-border"
         onClick={(e) => e.stopPropagation()}
