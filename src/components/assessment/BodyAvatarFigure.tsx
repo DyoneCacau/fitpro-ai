@@ -1,11 +1,10 @@
 import {
   type BodyProfileModel,
-  type BodyShape,
   type BodyZoneId,
   type ZoneStatus,
   zoneStatusColor,
 } from "@/lib/body-profile";
-import type { Sex } from "@/lib/nutrition-calculator";
+import { BodyMorphFigure } from "@/components/assessment/BodyMorphFigure";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -16,25 +15,8 @@ type Props = {
   className?: string;
 };
 
-const AVATAR_SRC: Record<Sex, Record<BodyShape, string>> = {
-  M: {
-    lean: "/avatars/male-lean.png",
-    normal: "/avatars/male-normal.png",
-    overweight: "/avatars/male-overweight.png",
-    obese: "/avatars/male-obese.png",
-  },
-  F: {
-    lean: "/avatars/female-lean.png",
-    normal: "/avatars/female-normal.png",
-    overweight: "/avatars/female-overweight.png",
-    obese: "/avatars/female-obese.png",
-  },
-};
-
 export function BodyAvatarFigure({ profile, bmr, showCallouts = true, activeZone, className }: Props) {
-  const src = AVATAR_SRC[profile.sex][profile.shape];
   const isFemale = profile.sex === "F";
-  const widthScale = widthFromBmi(profile.bmi);
   const positions = isFemale ? ZONE_POS_F : ZONE_POS_M;
   const alertZones = profile.zones.filter(
     (z) => z.status === "attention" || z.status === "critical" || z.status === "clinical",
@@ -71,12 +53,9 @@ export function BodyAvatarFigure({ profile, bmr, showCallouts = true, activeZone
         </>
       )}
 
-      <img
-        src={src}
-        alt={isFemale ? "Avatar corporal feminino" : "Avatar corporal masculino"}
-        className="relative z-10 h-full w-auto max-h-full object-contain select-none pointer-events-none [mix-blend-mode:screen]"
-        style={{ transform: `scaleX(${widthScale})`, transformOrigin: "bottom center" }}
-        draggable={false}
+      <BodyMorphFigure
+        profile={profile}
+        className="relative z-10 h-full w-auto max-h-full select-none pointer-events-none drop-shadow-[0_8px_24px_rgba(45,212,191,0.15)]"
       />
 
       <div className="absolute inset-0 z-[15] pointer-events-none" aria-hidden>
@@ -129,12 +108,6 @@ const ZONE_POS_F: Record<BodyZoneId, ZonePos> = {
   left_leg: { x: 44, y: 72, size: 17 },
   right_leg: { x: 56, y: 72, size: 17 },
 };
-
-function widthFromBmi(bmi: number | null): number {
-  if (bmi == null) return 1;
-  const clamped = Math.min(38, Math.max(17, bmi));
-  return Math.min(1.2, Math.max(0.9, 0.9 + (clamped - 17) * (0.3 / 21)));
-}
 
 function AvatarCallout({
   label,

@@ -33,8 +33,11 @@ export type BodyProfileModel = {
   leanMassKg: number | null;
   waistCm: number | null;
   torsoScale: number;
+  chestScale: number;
+  waistScale: number;
   armScale: number;
   legScale: number;
+  calfScale: number;
   hipScale: number;
   zones: BodyZoneInfo[];
   summary: string;
@@ -92,70 +95,78 @@ function shapeLabel(shape: BodyShape): string {
   }
 }
 
+// Baseline de proporção por formato quando não há medida específica.
+const SHAPE_BASE: Record<
+  BodyShape,
+  { chest: number; waist: number; hip: number; arm: number; leg: number }
+> = {
+  lean: { chest: 0.9, waist: 0.84, hip: 0.92, arm: 0.87, leg: 0.9 },
+  normal: { chest: 1, waist: 1, hip: 1, arm: 1, leg: 1 },
+  overweight: { chest: 1.12, waist: 1.22, hip: 1.1, arm: 1.08, leg: 1.06 },
+  obese: { chest: 1.24, waist: 1.42, hip: 1.2, arm: 1.16, leg: 1.12 },
+};
+
+// Razão circunferência/altura de referência (corpo "normal").
+function refRatios(sex: Sex) {
+  return sex === "M"
+    ? { chest: 0.53, waist: 0.47, hip: 0.54, arm: 0.185, thigh: 0.32 }
+    : { chest: 0.51, waist: 0.44, hip: 0.575, arm: 0.16, thigh: 0.33 };
+}
+
+// Converte uma circunferência (cm) na escala de largura da região do boneco.
+function regionScale(
+  value: number | null | undefined,
+  height: number,
+  ref: number,
+  sensitivity: number,
+  min: number,
+  max: number,
+  fallback: number,
+): number {
+  if (value == null || value <= 0 || height <= 0) return fallback;
+  const ratio = value / height;
+  return clamp(1 + (ratio - ref) * sensitivity, min, max);
+}
+
 function scalesFromShape(shape: BodyShape, metrics: AssessmentMetrics, sex: Sex) {
   const height = metrics.heightCm ?? 170;
+  const base = SHAPE_BASE[shape];
+  const ref = refRatios(sex);
+
+  const chest = metrics.circumferences.chest;
   const waist = metrics.circumferences.waist ?? metrics.circumferences.abdomen;
-  const waistRatio = waist != null && height > 0 ? waist / height : null;
+  const hip = metrics.circumferences.hip;
+  const avgArm = averageDefined([
+    metrics.circumferences.right_arm,
+    metrics.circumferences.left_arm,
+  ]);
+  const avgThigh = averageDefined([
+    metrics.circumferences.right_thigh,
+    metrics.circumferences.left_thigh,
+  ]);
 
-  let torsoScale = 1;
-  let armScale = 1;
-  let legScale = 1;
-
-  switch (shape) {
-    case "lean":
-      torsoScale = 0.86;
-      armScale = 0.88;
-      legScale = 0.9;
-      break;
-    case "normal":
-      torsoScale = 1;
-      armScale = 1;
-      legScale = 1;
-      break;
-    case "overweight":
-      torsoScale = 1.14;
-      armScale = 1.08;
-      legScale = 1.06;
-      break;
-    case "obese":
-      torsoScale = 1.28;
-      armScale = 1.14;
-      legScale = 1.12;
-      break;
-  }
-
-  if (waistRatio != null) {
-    const boost = Math.min(0.18, Math.max(0, (waistRatio - 0.48) * 0.9));
-    torsoScale += boost;
-  }
-
-  const avgArm =
-    averageDefined([
-      metrics.circumferences.right_arm,
-      metrics.circumferences.left_arm,
-    ]) ?? null;
-  if (avgArm != null && height > 0) {
-    const armRatio = avgArm / height;
-    armScale *= clamp(0.88 + armRatio * 0.55, 0.85, 1.2);
-  }
-
-  const avgThigh =
-    averageDefined([
-      metrics.circumferences.right_thigh,
-      metrics.circumferences.left_thigh,
-    ]) ?? null;
-  if (avgThigh != null && height > 0) {
-    const thighRatio = avgThigh / height;
-    legScale *= clamp(0.9 + thighRatio * 0.45, 0.88, 1.18);
-  }
-
-  const hipScale = sex === "F" ? 1.1 : 1;
+  const chestScale = regionScale(chest, height, ref.chest, 3.0, 0.8, 1.5, base.chest);
+  const waistScale = regionScale(waist, height, ref.waist, 3.4, 0.78, 1.65, base.waist);
+  const hipScale = regionScale(
+    hip,
+    height,
+    ref.hip,
+    3.0,
+    0.85,
+    1.5,
+    base.hip * (sex === "F" ? 1.05 : 1),
+  );
+  const armScale = regionScale(avgArm, height, ref.arm, 4.2, 0.8, 1.45, base.arm);
+  const legScale = regionScale(avgThigh, height, ref.thigh, 3.0, 0.85, 1.42, base.leg);
 
   return {
-    torsoScale: clamp(torsoScale, 0.82, 1.38),
-    armScale: clamp(armScale, 0.82, 1.25),
-    legScale: clamp(legScale, 0.85, 1.22),
+    torsoScale: chestScale,
+    chestScale,
+    waistScale,
     hipScale,
+    armScale,
+    legScale,
+    calfScale: clamp(0.9 + (legScale - 1) * 0.7, 0.85, 1.3),
   };
 }
 

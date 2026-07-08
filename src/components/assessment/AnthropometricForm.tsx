@@ -19,6 +19,8 @@ import {
   compactInputClass,
   compactTextareaClass,
 } from "@/components/forms/CompactFormFields";
+import { BodyMorphFigure } from "@/components/assessment/BodyMorphFigure";
+import { buildBodyProfile } from "@/lib/body-profile";
 import type { Sex } from "@/lib/nutrition-calculator";
 import type { Assessment } from "@/lib/tracking";
 import { fetchStudentAnamnesisContext } from "@/lib/tracking";
@@ -101,6 +103,11 @@ export function AnthropometricForm({
       { sex, age },
     );
   }, [assessedAt, weight, height, bodyFat, circumferences, skinfolds, sex, age]);
+
+  const previewProfile = useMemo(
+    () => buildBodyProfile({ sex, metrics: preview }),
+    [sex, preview],
+  );
 
   function setCircumference(key: keyof typeof circumferences, value: string) {
     setMaps((prev) => ({ ...prev, circumferences: { ...prev.circumferences, [key]: value } }));
@@ -221,18 +228,34 @@ export function AnthropometricForm({
         </div>
 
         <CompactSectionLabel>Circunferências (cm)</CompactSectionLabel>
-        <CompactMetricGrid>
-          {CIRCUMFERENCE_FIELDS.map((field) => (
-            <CompactMetricField key={field.key} label={field.label}>
-              <input
-                value={circumferences[field.key]}
-                onChange={(e) => setCircumference(field.key, e.target.value)}
-                inputMode="decimal"
-                className={compactInputClass}
-              />
-            </CompactMetricField>
-          ))}
-        </CompactMetricGrid>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_150px]">
+          <CompactMetricGrid>
+            {CIRCUMFERENCE_FIELDS.map((field) => (
+              <CompactMetricField key={field.key} label={field.label}>
+                <input
+                  value={circumferences[field.key]}
+                  onChange={(e) => setCircumference(field.key, e.target.value)}
+                  inputMode="decimal"
+                  className={compactInputClass}
+                />
+              </CompactMetricField>
+            ))}
+          </CompactMetricGrid>
+          <div className="rounded-xl border border-teal-500/20 bg-teal-500/5 p-2">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-bold text-teal-500">Boneco ao vivo</p>
+              <span className="rounded-full bg-teal-500/15 px-1.5 py-0.5 text-[8px] font-bold uppercase text-teal-500">
+                {previewProfile.shapeLabel}
+              </span>
+            </div>
+            <div className="mx-auto mt-1 h-52 w-full max-w-[130px]">
+              <BodyMorphFigure profile={previewProfile} />
+            </div>
+            <p className="text-center text-[8px] leading-tight text-muted-foreground">
+              O corpo muda conforme cada medida preenchida.
+            </p>
+          </div>
+        </div>
 
         <CompactSectionLabel>Dobras cutâneas (mm)</CompactSectionLabel>
         <CompactMetricGrid>
