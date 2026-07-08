@@ -118,12 +118,25 @@ function WorkoutPage() {
     if (!wasDone) startRest(restSeconds);
   }
 
-  function toggleExerciseComplete(exerciseId: string, restSeconds: number) {
+  function toggleExerciseComplete(
+    exerciseId: string,
+    restSeconds: number,
+    exerciseSetIds: string[] = [],
+  ) {
     const wasDone = completedExerciseIds.has(exerciseId);
     setCompletedExerciseIds((prev) => {
       const next = new Set(prev);
       if (next.has(exerciseId)) next.delete(exerciseId);
       else next.add(exerciseId);
+      return next;
+    });
+    setCompletedSetIds((prev) => {
+      const next = new Set(prev);
+      if (wasDone) {
+        exerciseSetIds.forEach((sid) => next.delete(sid));
+      } else {
+        exerciseSetIds.forEach((sid) => next.add(sid));
+      }
       return next;
     });
     if (!wasDone) startRest(restSeconds);
@@ -404,7 +417,11 @@ function ExerciseRow({
   muscles: string | null;
   active: boolean;
   done: boolean;
-  onToggleExercise: (exerciseId: string, restSeconds: number) => void;
+  onToggleExercise: (
+    exerciseId: string,
+    restSeconds: number,
+    exerciseSetIds: string[],
+  ) => void;
   onStartRest: (restSeconds: number) => void;
   completedSetIds: Set<string>;
   onToggleSet: (setId: string, restSeconds: number) => void;
@@ -423,7 +440,9 @@ function ExerciseRow({
         {active && (
           <button
             type="button"
-            onClick={() => onToggleExercise(exercise.id, restSeconds)}
+            onClick={() =>
+              onToggleExercise(exercise.id, restSeconds, sets.map((s) => s.id))
+            }
             aria-label={done ? "Desmarcar exercício" : "Marcar exercício como feito"}
             className={cn(
               "mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full border-2 transition-colors active:scale-90",
