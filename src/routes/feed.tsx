@@ -316,7 +316,11 @@ function ComposeModal({
       onPosted();
     } catch (e) {
       console.error(e);
-      alert("Erro ao publicar");
+      const msg =
+        e && typeof e === "object" && "message" in e
+          ? String((e as { message: unknown }).message)
+          : "Erro desconhecido";
+      alert(`Erro ao publicar: ${msg}`);
     } finally {
       setSaving(false);
     }
