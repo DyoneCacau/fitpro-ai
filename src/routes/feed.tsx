@@ -324,7 +324,10 @@ function ComposeModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full max-w-md rounded-t-3xl bg-card border-t border-border p-5 pb-8" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="w-full max-w-md rounded-t-3xl bg-card border-t border-border px-5 pt-5 max-h-[90dvh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold">Novo post</h3>
           <button onClick={onClose} className="rounded-full bg-secondary p-1.5"><X className="h-4 w-4" /></button>
@@ -351,7 +354,7 @@ function ComposeModal({
         />
         {preview && (
           <div className="mt-3 relative">
-            <img src={preview} alt="" className="w-full aspect-square object-cover rounded-2xl" />
+            <img src={preview} alt="" className="max-h-72 w-full rounded-2xl object-cover" />
             <button
               onClick={() => { setFile(null); setPreview(null); }}
               className="absolute top-2 right-2 rounded-full bg-black/70 p-1.5 text-white"
@@ -385,7 +388,7 @@ function ComposeModal({
             </label>
           </div>
         )}
-        <div className="mt-3 flex items-center justify-end">
+        <div className="sticky bottom-0 -mx-5 mt-3 flex items-center justify-end gap-2 border-t border-border bg-card px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <button
             onClick={submit}
             disabled={saving || (!text.trim() && !file)}
