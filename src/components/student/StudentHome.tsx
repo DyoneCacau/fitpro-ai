@@ -26,7 +26,7 @@ export function StudentHome() {
           </span>
         </div>
 
-        <Link to="/perfil" className="inline-flex flex-col items-center mb-4 active:opacity-80">
+        <Link to="/perfil" search={{ tab: undefined }} className="inline-flex flex-col items-center mb-4 active:opacity-80">
           <Avatar className="size-20 border-2 border-primary/30 shadow-glow">
             {avatarUrl && <AvatarImage src={avatarUrl} alt={name} />}
             <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xl font-black">

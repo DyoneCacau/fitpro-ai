@@ -81,7 +81,9 @@ export type ComparativeSection = {
   rows: ComparativeRow[];
 };
 
-export function parseMeasurements(raw: Assessment["measurements"]): AnthropometricMeasurements {
+export function parseMeasurements(
+  raw: Assessment["measurements"] | unknown,
+): AnthropometricMeasurements {
   if (!raw || typeof raw !== "object") return {};
   return raw as AnthropometricMeasurements;
 }
@@ -132,10 +134,11 @@ export function getWaistHipRisk(ratio: number, sex: Sex): string {
 }
 
 export function sumSkinfolds(skinfolds: Partial<Record<SkinfoldKey, number>>): number | null {
-  const values = SKINFOLD_FIELDS.map((f) => skinfolds[f.key]).filter((v) => v != null && !Number.isNaN(v));
+  const values = SKINFOLD_FIELDS.map((f) => skinfolds[f.key]).filter(
+    (v): v is number => v != null && !Number.isNaN(v),
+  );
   if (values.length === 0) return null;
-  if (values.length < SKINFOLD_FIELDS.length) return values.reduce((a, b) => a + b, 0);
-  return values.reduce((a, b) => a + (b ?? 0), 0);
+  return values.reduce((a, b) => a + b, 0);
 }
 
 export function computeBodyDensityJacksonPollock7(sum: number, age: number, sex: Sex): number {

@@ -78,6 +78,7 @@ function StudentDetailPage() {
       <header className="px-5 md:px-8 pt-10 pb-0 border-b border-border">
         <Link
           to="/clientes"
+          search={{ q: "" }}
           className="inline-flex items-center gap-1 text-xs text-muted-foreground mb-3 hover:text-foreground"
         >
           <ArrowLeft className="size-4" /> Clientes

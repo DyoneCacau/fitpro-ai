@@ -179,7 +179,10 @@ export function StudentAgendaPanel({ alunoId, personalId, studentName }: Props) 
               <span className="text-[11px] font-semibold text-muted-foreground block mb-1">
                 Periodicidade
               </span>
-              <RecurrencePresetPicker value={intervalDays} onChange={setIntervalDays} />
+              <RecurrencePresetPicker
+                value={intervalDays}
+                onChange={(days) => days != null && setIntervalDays(days)}
+              />
             </div>
 
             {followUp?.last_visit_at && (

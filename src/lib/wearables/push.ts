@@ -28,11 +28,11 @@ export async function initPushNotifications(userId: string): Promise<void> {
   });
 
   await PushNotifications.addListener("registrationError", (err) => {
-    console.warn("[push] registration error", err);
+    if (import.meta.env.DEV) console.warn("[push] registration error", err);
   });
 
   await PushNotifications.addListener("pushNotificationReceived", (notification) => {
-    console.info("[push] received", notification.title);
+    if (import.meta.env.DEV) console.info("[push] received", notification.title);
   });
 
   await PushNotifications.addListener("pushNotificationActionPerformed", (action) => {

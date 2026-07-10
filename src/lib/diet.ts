@@ -389,7 +389,7 @@ export async function fetchDietTemplates(personalId: string) {
     .eq("is_active", true)
     .order("updated_at", { ascending: false });
   if (error) throw error;
-  return (data ?? []) as DietPlan[];
+  return (data ?? []) as unknown as DietPlan[];
 }
 
 export async function syncDietFromAnamnesis(alunoId: string) {
@@ -408,9 +408,9 @@ export async function cloneDietPlan(input: {
 }) {
   const { data, error } = await supabase.rpc("clone_diet_plan", {
     _source_plan_id: input.sourcePlanId,
-    _target_aluno_id: input.targetAlunoId ?? null,
+    _target_aluno_id: input.targetAlunoId ?? undefined,
     _as_template: input.asTemplate ?? false,
-    _template_name: input.templateName ?? null,
+    _template_name: input.templateName ?? undefined,
   });
   if (error) throw error;
   return data as string;

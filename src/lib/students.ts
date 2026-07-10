@@ -78,7 +78,7 @@ export async function createStudentInvitation(input: {
 }): Promise<string> {
   const { data, error } = await supabase.rpc("create_student_invitation", {
     _email: input.email.trim(),
-    _full_name: input.fullName?.trim() || null,
+    _full_name: input.fullName?.trim() || undefined,
     _follow_up_interval_days: input.followUpIntervalDays,
     _follow_up_kind: input.followUpKind,
   });

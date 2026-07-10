@@ -33,4 +33,4 @@ www
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
+supabase/.temp/

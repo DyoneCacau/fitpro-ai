@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 
 function getStravaConfig() {
   const clientId = process.env.STRAVA_CLIENT_ID;
@@ -8,7 +10,7 @@ function getStravaConfig() {
   const appUrl = process.env.APP_URL ?? process.env.VITE_APP_URL ?? "http://localhost:8080";
   if (!clientId || !clientSecret) {
     throw new Error(
-      "Strava não configurado. Defina STRAVA_CLIENT_ID e STRAVA_CLIENT_SECRET no .env",
+      "Integração de atividades não configurada. Defina STRAVA_CLIENT_ID e STRAVA_CLIENT_SECRET no .env",
     );
   }
   return { clientId, clientSecret, appUrl };
@@ -32,7 +34,7 @@ type StravaActivity = {
 };
 
 async function refreshStravaToken(
-  supabase: Awaited<ReturnType<typeof import("@supabase/supabase-js").createClient>>,
+  supabase: SupabaseClient<Database>,
   userId: string,
   refreshToken: string,
   clientId: string,
@@ -49,7 +51,7 @@ async function refreshStravaToken(
     }),
   });
 
-  if (!res.ok) throw new Error("Falha ao renovar token Strava");
+  if (!res.ok) throw new Error("Falha ao renovar conexão de atividades");
 
   const data = (await res.json()) as StravaTokenResponse;
   await supabase
@@ -106,7 +108,7 @@ export const exchangeStravaCode = createServerFn({ method: "POST" })
 
     if (!res.ok) {
       const err = await res.text();
-      throw new Error(`Strava OAuth falhou: ${err}`);
+      throw new Error(`Autorização de atividades falhou: ${err}`);
     }
 
     const tokenData = (await res.json()) as StravaTokenResponse;
@@ -150,7 +152,7 @@ export const syncStravaData = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (connErr) throw connErr;
-    if (!conn?.access_token) throw new Error("Strava não conectado");
+    if (!conn?.access_token) throw new Error("Atividades não conectadas");
 
     let accessToken = conn.access_token;
     const expiresAt = conn.token_expires_at ? new Date(conn.token_expires_at).getTime() : 0;
@@ -170,7 +172,7 @@ export const syncStravaData = createServerFn({ method: "POST" })
       { headers: { Authorization: `Bearer ${accessToken}` } },
     );
 
-    if (!res.ok) throw new Error("Falha ao buscar atividades Strava");
+    if (!res.ok) throw new Error("Falha ao buscar atividades");
 
     const activities = (await res.json()) as StravaActivity[];
     if (activities.length === 0) {
@@ -220,7 +222,7 @@ export const syncStravaData = createServerFn({ method: "POST" })
           provider: "strava",
           active_calories: agg.calories,
           distance_m: agg.distance,
-          source_label: "Strava",
+          source_label: "Atividades GPS",
         },
         { onConflict: "user_id,metric_date,provider" },
       );

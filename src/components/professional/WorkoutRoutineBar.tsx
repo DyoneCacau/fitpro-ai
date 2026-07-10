@@ -573,7 +573,7 @@ function CloneRoutineModal({
                 <optgroup key={group} label={group}>
                   {items.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {"label" in s ? s.label : s.name}
+                      {s.label}
                     </option>
                   ))}
                 </optgroup>

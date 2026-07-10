@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import type { AnthropometricMeasurements } from "@/lib/anthropometry";
 
 export type Assessment = {
@@ -83,7 +84,7 @@ export async function createAssessment(input: {
     height_cm: input.heightCm ?? null,
     body_fat_pct: input.bodyFatPct ?? null,
     lean_mass_kg: input.leanMassKg ?? null,
-    measurements: (input.measurements ?? {}) as Record<string, unknown>,
+    measurements: (input.measurements ?? {}) as Json,
     notes: input.notes?.trim() || null,
   });
   if (error) throw error;
@@ -111,7 +112,7 @@ export async function updateAssessment(input: {
       height_cm: input.heightCm ?? null,
       body_fat_pct: input.bodyFatPct ?? null,
       lean_mass_kg: input.leanMassKg ?? null,
-      measurements: (input.measurements ?? {}) as Record<string, unknown>,
+      measurements: (input.measurements ?? {}) as Json,
       notes: input.notes?.trim() || null,
     })
     .eq("id", input.id);

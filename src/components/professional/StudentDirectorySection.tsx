@@ -67,6 +67,7 @@ export function StudentDirectorySection({
         {hasMore && (
           <Link
             to="/clientes"
+            search={{ q: "" }}
             className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-primary"
           >
             Ver todos
@@ -125,6 +126,7 @@ export function StudentDirectorySection({
           {hasMore && !isSearching && (
             <Link
               to="/clientes"
+              search={{ q: "" }}
               className="mt-3 flex items-center justify-center gap-1 rounded-xl border border-border bg-muted/20 py-2.5 text-xs font-semibold text-primary"
             >
               Ver todos ({students.length})

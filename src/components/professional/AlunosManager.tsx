@@ -149,7 +149,10 @@ export function AlunosManager() {
             </label>
             <div>
               <span className="text-[11px] text-muted-foreground block mb-1">Periodicidade</span>
-              <RecurrencePresetPicker value={planDays} onChange={setPlanDays} />
+              <RecurrencePresetPicker
+                value={planDays}
+                onChange={(days) => days != null && setPlanDays(days)}
+              />
             </div>
             <p className="text-[10px] text-muted-foreground">
               Será usado nos agendamentos de retorno e reavaliação deste aluno.

@@ -36,7 +36,7 @@ import {
   parsePrescriptionLine,
   parseWorkoutText,
 } from "@/lib/workout-text-parser";
-import { SET_TYPE_OPTIONS } from "@/lib/workout-display";
+import { SET_TYPE_OPTIONS, type SetType } from "@/lib/workout-display";
 
 type WorkoutRow = {
   id: string;
@@ -65,9 +65,20 @@ type SetRow = {
   position: number;
   target_reps: string;
   target_load: number | null;
-  set_type: string;
+  set_type: SetType | string;
   note: string | null;
 };
+
+type SetPatch = {
+  target_reps?: string;
+  target_load?: number;
+  set_type?: SetType;
+  note?: string | null;
+};
+
+function normalizeSetType(value: string | null | undefined): SetType {
+  return SET_TYPE_OPTIONS.some((o) => o.value === value) ? (value as SetType) : "normal";
+}
 
 interface Props {
   alunoId: string | null;
@@ -678,7 +689,7 @@ function AddSetButton({
         position: sets.length + 1,
         target_reps: last?.target_reps ?? "",
         target_load: last?.target_load ?? 0,
-        set_type: last?.set_type ?? "normal",
+        set_type: normalizeSetType(last?.set_type),
       });
       if (error) throw error;
     },
@@ -867,7 +878,7 @@ function SetRowEditor({ set, onChanged }: { set: SetRow; onChanged: () => void }
   }, [set.id, set.note]);
 
   const save = useMutation({
-    mutationFn: async (patch: Partial<SetRow>) => {
+    mutationFn: async (patch: SetPatch) => {
       const { error } = await supabase.from("exercise_sets").update(patch).eq("id", set.id);
       if (error) throw error;
     },
@@ -894,7 +905,7 @@ function SetRowEditor({ set, onChanged }: { set: SetRow; onChanged: () => void }
         />
         <select
           value={SET_TYPE_OPTIONS.some((o) => o.value === set.set_type) ? set.set_type : "normal"}
-          onChange={(e) => save.mutate({ set_type: e.target.value })}
+          onChange={(e) => save.mutate({ set_type: e.target.value as SetType })}
           className="field-input py-1.5 text-xs"
         >
           {SET_TYPE_OPTIONS.map((o) => (

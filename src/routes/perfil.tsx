@@ -94,7 +94,7 @@ function Perfil() {
     setTab(next);
     void navigate({
       to: "/perfil",
-      search: next === "conta" ? {} : { tab: next },
+      search: next === "conta" ? { tab: undefined } : { tab: next },
       replace: true,
     });
   }
@@ -201,7 +201,7 @@ function Perfil() {
               <div className="space-y-2">
                 {isProfessional && (
                   <>
-                    <MenuLink to="/clientes" icon={CalendarClock} label="Agenda e clientes" />
+                    <MenuLink to="/clientes" search={{ q: "" }} icon={CalendarClock} label="Agenda e clientes" />
                     <MenuLink
                       to="/perfil"
                       search={{ tab: "alunos" }}
@@ -254,7 +254,7 @@ function MenuLink({
   label,
 }: {
   to: string;
-  search?: { tab: PerfilTab };
+  search?: { tab?: PerfilTab; q?: string };
   icon: typeof Dumbbell;
   label: string;
 }) {

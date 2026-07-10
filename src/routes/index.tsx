@@ -231,11 +231,9 @@ function HomeInner() {
             </button>
 
             <Link
-
               to="/perfil"
-
+              search={{ tab: undefined }}
               className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-primary text-primary-foreground font-bold shadow-glow"
-
             >
 
               {initials}

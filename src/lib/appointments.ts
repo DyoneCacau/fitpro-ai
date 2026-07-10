@@ -376,8 +376,8 @@ export async function createAppointment(input: CreateAppointmentInput) {
     _scheduled_at: input.scheduled_at,
     _duration_minutes: input.duration_minutes ?? 60,
     _kind: input.kind ?? "treino",
-    _notes: input.notes?.trim() || null,
-    _recurrence_days: input.recurrence_days ?? null,
+    _notes: input.notes?.trim() || undefined,
+    _recurrence_days: input.recurrence_days ?? undefined,
   });
   if (error) throw error;
   return data as string;

@@ -291,9 +291,9 @@ export async function cloneRoutineToStudent(
   const { data, error } = await supabase.rpc("clone_workout_routine", {
     _source_routine_id: sourceRoutineId,
     _target_aluno_id: targetAlunoId,
-    _name: options?.name ?? null,
-    _starts_at: options?.startsAt ?? null,
-    _ends_at: options?.endsAt ?? null,
+    _name: options?.name ?? undefined,
+    _starts_at: options?.startsAt ?? undefined,
+    _ends_at: options?.endsAt ?? undefined,
   });
   if (error) throw error;
   return data as string;
