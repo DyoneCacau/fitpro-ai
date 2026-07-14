@@ -26,6 +26,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AnamneseRouteImport } from './routes/anamnese'
 import { Route as AlunosRouteImport } from './routes/alunos'
 import { Route as AgendaRouteImport } from './routes/agenda'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AcompanhamentoRouteImport } from './routes/acompanhamento'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TreinoIdRouteImport } from './routes/treino.$id'
@@ -118,6 +119,11 @@ const AgendaRoute = AgendaRouteImport.update({
   path: '/agenda',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AcompanhamentoRoute = AcompanhamentoRouteImport.update({
   id: '/acompanhamento',
   path: '/acompanhamento',
@@ -153,6 +159,7 @@ const IntegracoesStravaCallbackRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/acompanhamento': typeof AcompanhamentoRoute
+  '/admin': typeof AdminRoute
   '/agenda': typeof AgendaRoute
   '/alunos': typeof AlunosRouteWithChildren
   '/anamnese': typeof AnamneseRoute
@@ -178,6 +185,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/acompanhamento': typeof AcompanhamentoRoute
+  '/admin': typeof AdminRoute
   '/agenda': typeof AgendaRoute
   '/alunos': typeof AlunosRouteWithChildren
   '/anamnese': typeof AnamneseRoute
@@ -204,6 +212,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/acompanhamento': typeof AcompanhamentoRoute
+  '/admin': typeof AdminRoute
   '/agenda': typeof AgendaRoute
   '/alunos': typeof AlunosRouteWithChildren
   '/anamnese': typeof AnamneseRoute
@@ -231,6 +240,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/acompanhamento'
+    | '/admin'
     | '/agenda'
     | '/alunos'
     | '/anamnese'
@@ -256,6 +266,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/acompanhamento'
+    | '/admin'
     | '/agenda'
     | '/alunos'
     | '/anamnese'
@@ -281,6 +292,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/acompanhamento'
+    | '/admin'
     | '/agenda'
     | '/alunos'
     | '/anamnese'
@@ -307,6 +319,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AcompanhamentoRoute: typeof AcompanhamentoRoute
+  AdminRoute: typeof AdminRoute
   AgendaRoute: typeof AgendaRoute
   AlunosRoute: typeof AlunosRouteWithChildren
   AnamneseRoute: typeof AnamneseRoute
@@ -449,6 +462,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgendaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/acompanhamento': {
       id: '/acompanhamento'
       path: '/acompanhamento'
@@ -520,6 +540,7 @@ const IntegracoesRouteWithChildren = IntegracoesRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AcompanhamentoRoute: AcompanhamentoRoute,
+  AdminRoute: AdminRoute,
   AgendaRoute: AgendaRoute,
   AlunosRoute: AlunosRouteWithChildren,
   AnamneseRoute: AnamneseRoute,

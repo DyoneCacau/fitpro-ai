@@ -8,6 +8,7 @@ import {
   Dumbbell,
   Home,
   Rss,
+  Shield,
   User,
   Users,
 } from "lucide-react";
@@ -46,9 +47,10 @@ const items = [
 
 export function ProfessionalSidebar() {
   const loc = useLocation();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const { collapsed, toggle } = useProfessionalSidebar();
   const { data: unread = 0 } = useUnreadNotifications(user?.id);
+  const isAdmin = role === "admin";
 
   return (
     <aside
@@ -108,6 +110,24 @@ export function ProfessionalSidebar() {
               </Link>
             );
           })}
+
+          {isAdmin && (
+            <Link
+              to="/admin"
+              title={collapsed ? "Admin" : undefined}
+              aria-label="Painel admin"
+              className={cn(
+                "flex items-center rounded-xl text-sm font-semibold transition-colors",
+                collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5",
+                loc.pathname === "/admin"
+                  ? "bg-primary text-primary-foreground shadow-glow"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
+              )}
+            >
+              <Shield className="size-5 shrink-0" strokeWidth={2.2} />
+              {!collapsed && <span className="truncate">Admin</span>}
+            </Link>
+          )}
 
           <Link
             to="/notificacoes"

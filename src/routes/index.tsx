@@ -30,7 +30,7 @@ import { formatAppRole } from "@/lib/labels";
 
 import { fetchMyStudents } from "@/lib/students";
 import { fetchProfessionalDashboard } from "@/lib/professional-analytics";
-import { fetchOnboardingState, completeTour } from "@/lib/professional-onboarding";
+import { fetchOnboardingState, completeTour, markOnboardingDone, isOnboardingFinished, isOnboardingDoneLocally } from "@/lib/professional-onboarding";
 
 
 
@@ -116,14 +116,20 @@ function HomeInner() {
 
   const [wizardOpen, setWizardOpen] = useState(false);
   const [runTour, setRunTour] = useState(false);
+  const [wizardDismissed, setWizardDismissed] = useState(false);
+
+  const onboardingDone =
+    isOnboardingFinished(onboarding) ||
+    (!!user?.id && isOnboardingDoneLocally(user.id));
 
   useEffect(() => {
-    if (onboarding && !onboarding.completedAt && !onboarding.skipped) {
+    if (!onboarding || !user?.id || wizardDismissed || onboardingDone) return;
+    if (!onboarding.completedAt && !onboarding.skipped) {
       setWizardOpen(true);
     }
-  }, [onboarding]);
+  }, [onboarding, user?.id, wizardDismissed, onboardingDone]);
 
-  const needsOnboarding = Boolean(onboarding && !onboarding.completedAt);
+  const needsOnboarding = Boolean(onboarding && !onboardingDone);
 
   const sub = onboarding?.subscription;
   const trialDaysLeft =
@@ -162,14 +168,30 @@ function HomeInner() {
 
   }
 
-  function handleWizardFinished() {
+  async function handleWizardFinished() {
     setWizardOpen(false);
+    setWizardDismissed(true);
+    if (user?.id) {
+      try {
+        await markOnboardingDone(user.id);
+      } catch {
+        // ignore — localStorage já ajuda a não reabrir
+      }
+    }
     void qc.invalidateQueries({ queryKey: ["onboardingState", user?.id] });
     if (onboarding && !onboarding.tourCompletedAt) setRunTour(true);
   }
 
-  function handleWizardSkip() {
+  async function handleWizardSkip() {
     setWizardOpen(false);
+    setWizardDismissed(true);
+    if (user?.id) {
+      try {
+        await markOnboardingDone(user.id);
+      } catch {
+        // ignore
+      }
+    }
     void qc.invalidateQueries({ queryKey: ["onboardingState", user?.id] });
   }
 
@@ -192,10 +214,12 @@ function HomeInner() {
 
     <AppShell>
 
-      {needsOnboarding && <OnboardingBanner onOpen={() => setWizardOpen(true)} />}
+      {needsOnboarding && !wizardDismissed && (
+        <OnboardingBanner onOpen={() => setWizardOpen(true)} />
+      )}
 
       {showTrialBanner && trialDaysLeft !== null && (
-        <TrialBanner daysLeft={trialDaysLeft} onSubscribe={() => setWizardOpen(true)} />
+        <TrialBanner daysLeft={trialDaysLeft} />
       )}
 
       <header data-tour="home" className="bg-gradient-hero px-5 pt-12 pb-4">
@@ -276,8 +300,8 @@ function HomeInner() {
       <ProfessionalOnboardingWizard
         userId={user.id}
         firstName={firstName}
-        onFinished={handleWizardFinished}
-        onSkip={handleWizardSkip}
+        onFinished={() => void handleWizardFinished()}
+        onSkip={() => void handleWizardSkip()}
       />
     )}
 

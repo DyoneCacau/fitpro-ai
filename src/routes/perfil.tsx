@@ -12,6 +12,7 @@ import {
   Pill,
   HeartPulse,
   CalendarClock,
+  Shield,
   Users,
   Watch,
 } from "lucide-react";
@@ -210,6 +211,9 @@ function Perfil() {
                     />
                   </>
                 )}
+                {role === "admin" && (
+                  <MenuLink to="/admin" icon={Shield} label="Painel admin" />
+                )}
                 <MenuLink to="/treinos" icon={Dumbbell} label="Meus treinos" />
                 <MenuLink to="/dieta" icon={Apple} label="Minha dieta" />
                 {isStudent && (
@@ -253,7 +257,7 @@ function MenuLink({
   icon: Icon,
   label,
 }: {
-  to: string;
+  to: "/" | "/clientes" | "/perfil" | "/treinos" | "/dieta" | "/acompanhamento" | "/integracoes" | "/notificacoes" | "/admin";
   search?: { tab?: PerfilTab; q?: string };
   icon: typeof Dumbbell;
   label: string;

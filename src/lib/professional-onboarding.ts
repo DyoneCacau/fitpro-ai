@@ -26,33 +26,42 @@ export type PlanDefinition = {
 export const PLANS: PlanDefinition[] = [
   {
     id: "standard",
-    name: "Standard",
-    tagline: "Até 25 alunos",
-    priceCents: 5990,
-    firstMonthCents: 100,
-    recommended: true,
+    name: "Starter",
+    tagline: "Até 15 alunos",
+    priceCents: 4990,
+    firstMonthCents: 4990,
     features: [
-      "Gestão completa",
-      "Treinos e cardápios",
-      "Cobranças automáticas",
-      "Suporte humanizado",
+      "Treinos + dietas juntos",
+      "Anamnese e avaliações",
+      "Agenda",
+      "Área do aluno no app",
     ],
   },
   {
     id: "premium",
-    name: "Premium",
-    tagline: "Até 50 alunos",
-    priceCents: 9990,
-    firstMonthCents: 100,
-    features: ["Tudo do Standard", "Anamnese personalizada"],
+    name: "Pro",
+    tagline: "Até 40 alunos",
+    priceCents: 7990,
+    firstMonthCents: 7990,
+    recommended: true,
+    features: [
+      "Tudo do Starter",
+      "Mais capacidade de alunos",
+      "Wearables",
+      "Feed da comunidade",
+    ],
   },
   {
     id: "pro",
-    name: "Pro",
+    name: "Clinic",
     tagline: "Alunos ilimitados",
-    priceCents: 18990,
-    firstMonthCents: 100,
-    features: ["Tudo do Premium", "Feedback personalizado", "IA e Integrações"],
+    priceCents: 12990,
+    firstMonthCents: 12990,
+    features: [
+      "Tudo do Pro",
+      "Alunos ilimitados",
+      "Prioridade no suporte",
+    ],
   },
 ];
 
@@ -185,7 +194,42 @@ export async function completeOnboarding(userId: string): Promise<void> {
 }
 
 export async function skipOnboarding(userId: string): Promise<void> {
-  await saveOnboardingProfile(userId, { onboarding_skipped: true });
+  await saveOnboardingProfile(userId, {
+    onboarding_skipped: true,
+    onboarding_completed_at: new Date().toISOString(),
+  });
+}
+
+/** Marca onboarding como concluído (idempotente) — evita reabrir no Início. */
+export async function markOnboardingDone(userId: string): Promise<void> {
+  await saveOnboardingProfile(userId, {
+    onboarding_completed_at: new Date().toISOString(),
+  });
+  try {
+    localStorage.setItem(onboardingLocalKey(userId), "1");
+  } catch {
+    // ignore
+  }
+}
+
+export function onboardingLocalKey(userId: string): string {
+  return `fitpro:onboarding-done:${userId}`;
+}
+
+export function isOnboardingDoneLocally(userId: string): boolean {
+  try {
+    return localStorage.getItem(onboardingLocalKey(userId)) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function isOnboardingFinished(state: {
+  completedAt: string | null;
+  skipped: boolean;
+} | null | undefined): boolean {
+  if (!state) return false;
+  return Boolean(state.completedAt || state.skipped);
 }
 
 export async function completeTour(userId: string): Promise<void> {

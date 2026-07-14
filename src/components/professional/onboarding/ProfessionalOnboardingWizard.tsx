@@ -103,11 +103,11 @@ export function ProfessionalOnboardingWizard({ userId, firstName, onFinished, on
         instagram: instagram.trim().replace(/^@/, "") || null,
       });
       await completeOnboarding(userId);
-      setDone(true);
     } catch {
-      setDone(true);
+      // ainda marca concluído no fluxo do pai (Ir para o dashboard)
     } finally {
       setSaving(false);
+      setDone(true);
     }
   }
 
